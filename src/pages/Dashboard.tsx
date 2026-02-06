@@ -1,13 +1,17 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useDiamonds } from '@/hooks/useDiamonds';
 import { CountdownTimer } from '@/components/CountdownTimer';
+import { DiamondBalance } from '@/components/DiamondBalance';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Users, Zap, ChevronRight, CheckCircle2, Clock, Lock } from 'lucide-react';
+import { Trophy, Users, Zap, ChevronRight, CheckCircle2, Clock, Lock, Diamond, Share2, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link, useNavigate } from 'react-router-dom';
+
+const JOIN_COST = 15;
 
 interface Competition {
   id: string;
@@ -29,6 +33,7 @@ interface Challenge {
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { diamonds, dailyAds, dailyShares, rulesAccepted, watchAd, shareDiamond, spendDiamonds, refetch } = useDiamonds();
   const [competition, setCompetition] = useState<Competition | null>(null);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [memberCount, setMemberCount] = useState(0);
@@ -38,14 +43,10 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [competitionStarted, setCompetitionStarted] = useState(false);
 
-  useEffect(() => {
-    fetchCompetition();
-  }, [user]);
+  useEffect(() => { fetchCompetition(); }, [user]);
 
   const fetchCompetition = async () => {
     setLoading(true);
-    // Get the latest competition (active or upcoming)
-    // Prefer active competition, fallback to latest
     let { data: comp } = await supabase
       .from('competitions')
       .select('*')
@@ -68,14 +69,12 @@ export default function Dashboard() {
       setCompetition(comp);
       setCompetitionStarted(new Date(comp.start_time) <= new Date());
 
-      // Get member count
       const { count } = await supabase
         .from('competition_memberships')
         .select('*', { count: 'exact', head: true })
         .eq('competition_id', comp.id);
       setMemberCount(count || 0);
 
-      // Check if user has joined
       if (user) {
         const { data: membership } = await supabase
           .from('competition_memberships')
@@ -85,7 +84,6 @@ export default function Dashboard() {
           .maybeSingle();
         setHasJoined(!!membership);
 
-        // Get challenges
         const { data: chs } = await supabase
           .from('challenges')
           .select('*')
@@ -93,7 +91,6 @@ export default function Dashboard() {
           .order('order_index');
         setChallenges(chs || []);
 
-        // Get user's approved submissions
         if (chs && chs.length > 0) {
           const { data: subs } = await supabase
             .from('submissions')
@@ -104,8 +101,6 @@ export default function Dashboard() {
           
           const completed = new Set((subs || []).map(s => s.challenge_id));
           setCompletedChallenges(completed);
-          
-          // Find current challenge index
           const idx = chs.findIndex(c => !completed.has(c.id));
           setCurrentChallengeIndex(idx === -1 ? chs.length : idx);
         }
@@ -115,22 +110,33 @@ export default function Dashboard() {
   };
 
   const handleJoin = async () => {
-    if (!user) {
-      navigate('/auth');
+    if (!user) { navigate('/auth'); return; }
+    if (!competition) return;
+
+    // Check rules
+    if (!rulesAccepted) {
+      toast.error('Du måste godkänna reglerna först');
+      navigate('/regler');
       return;
     }
-    if (!competition) return;
+
+    // Check diamonds
+    if (diamonds < JOIN_COST) {
+      toast.error(`Du behöver ${JOIN_COST} diamanter. Du har ${diamonds}. Tjäna fler genom att titta på annonser eller dela!`);
+      return;
+    }
+
+    // Spend diamonds
+    const spent = await spendDiamonds(JOIN_COST);
+    if (!spent) { toast.error('Kunde inte dra diamanter'); return; }
 
     const { error } = await supabase
       .from('competition_memberships')
       .insert({ competition_id: competition.id, user_id: user.id });
     
     if (error) {
-      if (error.code === '23505') {
-        toast.info('Du har redan anmält dig!');
-      } else {
-        toast.error('Kunde inte anmäla dig');
-      }
+      if (error.code === '23505') toast.info('Du har redan anmält dig!');
+      else toast.error('Kunde inte anmäla dig');
     } else {
       toast.success('Du är anmäld! Lycka till! 🎉');
       setHasJoined(true);
@@ -138,7 +144,22 @@ export default function Dashboard() {
     }
   };
 
-  // Subscribe to realtime updates for membership count
+  const handleShare = async () => {
+    const url = window.location.origin;
+    const text = `Jag tävlar i Sweden Challenge Race! Häng med! 🏆🇸🇪`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'Sweden Challenge Race', text, url });
+        await shareDiamond();
+      } catch {}
+    } else {
+      await navigator.clipboard.writeText(`${text} ${url}`);
+      await shareDiamond();
+      toast.success('Länk kopierad!');
+    }
+  };
+
+  // Realtime membership count
   useEffect(() => {
     if (!competition) return;
     const channel = supabase
@@ -176,7 +197,7 @@ export default function Dashboard() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
-      {/* Hero Section */}
+      {/* Hero */}
       <div className="text-center mb-10 animate-slide-up">
         <Badge className="mb-4 gradient-gold text-accent-foreground border-0 px-4 py-1 text-sm font-medium">
           {competitionStarted ? 'Pågående tävling' : 'Kommande tävling'}
@@ -202,16 +223,17 @@ export default function Dashboard() {
       )}
 
       {/* Stats + Join */}
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
         <div className="glass-card rounded-xl px-6 py-3 flex items-center gap-2">
           <Users className="h-5 w-5 text-sweden-blue" />
           <span className="font-semibold">{memberCount}</span>
           <span className="text-muted-foreground">deltagare</span>
         </div>
+        {user && <DiamondBalance count={diamonds} />}
         {!hasJoined ? (
           <Button onClick={handleJoin} size="lg" className="gradient-gold text-accent-foreground font-bold shadow-lg hover:opacity-90 px-8">
-            <Zap className="h-5 w-5 mr-2" />
-            Anmäl dig gratis
+            <Diamond className="h-5 w-5 mr-2" />
+            Anmäl dig ({JOIN_COST} 💎)
           </Button>
         ) : (
           <Badge variant="outline" className="text-success border-success px-4 py-2 text-sm">
@@ -220,7 +242,20 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Challenges (only show if competition started and user joined) */}
+      {/* Earn diamonds */}
+      {user && !hasJoined && (
+        <div className="glass-card rounded-xl p-4 mb-10 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <p className="text-sm text-muted-foreground">Tjäna diamanter:</p>
+          <Button size="sm" variant="outline" onClick={watchAd} disabled={dailyAds >= 10}>
+            <Eye className="h-4 w-4 mr-1" /> Titta på annons ({dailyAds}/10)
+          </Button>
+          <Button size="sm" variant="outline" onClick={handleShare} disabled={dailyShares >= 5}>
+            <Share2 className="h-4 w-4 mr-1" /> Dela tävlingen ({dailyShares}/5)
+          </Button>
+        </div>
+      )}
+
+      {/* Challenges */}
       {competitionStarted && hasJoined && challenges.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-xl font-display font-bold mb-4 flex items-center gap-2">
@@ -261,13 +296,12 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* If competition started but user hasn't joined */}
       {competitionStarted && !hasJoined && (
         <div className="text-center glass-card rounded-xl p-8">
           <h3 className="text-lg font-display font-bold mb-2">Tävlingen har börjat!</h3>
           <p className="text-muted-foreground mb-4">Anmäl dig nu för att börja med utmaningarna.</p>
           <Button onClick={handleJoin} className="gradient-gold text-accent-foreground font-bold">
-            Anmäl dig gratis
+            <Diamond className="h-5 w-5 mr-2" /> Anmäl dig ({JOIN_COST} 💎)
           </Button>
         </div>
       )}

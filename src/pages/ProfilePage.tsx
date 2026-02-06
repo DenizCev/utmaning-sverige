@@ -1,40 +1,40 @@
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useDiamonds } from '@/hooks/useDiamonds';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Camera, Save, Trophy, Loader2 } from 'lucide-react';
+import { DiamondBalance } from '@/components/DiamondBalance';
+import { Camera, Save, Trophy, Loader2, Diamond, Eye, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
 export default function ProfilePage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { diamonds, dailyAds, dailyShares, watchAd, shareDiamond } = useDiamonds();
   const fileRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState<any>(null);
   const [username, setUsername] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [stats, setStats] = useState({ competitions: 0, challenges: 0, points: 0 });
+  const [history, setHistory] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user) { navigate('/auth'); return; }
     fetchProfile();
     fetchStats();
+    fetchHistory();
   }, [user]);
 
   const fetchProfile = async () => {
     if (!user) return;
     const { data } = await supabase.from('profiles').select('*').eq('user_id', user.id).maybeSingle();
-    if (data) {
-      setProfile(data);
-      setUsername(data.username);
-      setAvatarUrl(data.avatar_url);
-    }
+    if (data) { setProfile(data); setUsername(data.username); setAvatarUrl(data.avatar_url); }
   };
 
   const fetchStats = async () => {
@@ -46,6 +46,16 @@ export default function ProfilePage() {
       challenges: subs?.length || 0,
       points: (subs || []).reduce((sum, s) => sum + (s.points_awarded || 0), 0),
     });
+  };
+
+  const fetchHistory = async () => {
+    if (!user) return;
+    const { data } = await (supabase.from('diamond_history') as any)
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(20);
+    setHistory(data || []);
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,6 +76,18 @@ export default function ProfilePage() {
     if (error) toast.error('Kunde inte spara profil');
     else toast.success('Profil uppdaterad!');
     setSaving(false);
+  };
+
+  const handleShare = async () => {
+    const url = window.location.origin;
+    const text = `Kolla in Sweden Challenge Race! 🏆🇸🇪`;
+    if (navigator.share) {
+      try { await navigator.share({ title: 'Sweden Challenge Race', text, url }); await shareDiamond(); } catch {}
+    } else {
+      await navigator.clipboard.writeText(`${text} ${url}`);
+      await shareDiamond();
+      toast.success('Länk kopierad!');
+    }
   };
 
   if (!user) return null;
@@ -104,6 +126,41 @@ export default function ProfilePage() {
               Spara ändringar
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Diamonds section */}
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <h2 className="text-xl font-display font-bold mb-4 flex items-center gap-2">
+            <Diamond className="h-5 w-5 text-sweden-gold" /> Diamanter
+          </h2>
+          <div className="flex items-center gap-4 mb-4">
+            <DiamondBalance count={diamonds} />
+          </div>
+          <div className="flex flex-wrap gap-2 mb-4">
+            <Button size="sm" variant="outline" onClick={watchAd} disabled={dailyAds >= 10}>
+              <Eye className="h-4 w-4 mr-1" /> Titta på annons ({dailyAds}/10)
+            </Button>
+            <Button size="sm" variant="outline" onClick={handleShare} disabled={dailyShares >= 5}>
+              <Share2 className="h-4 w-4 mr-1" /> Dela ({dailyShares}/5)
+            </Button>
+          </div>
+          {history.length > 0 && (
+            <div>
+              <p className="text-sm font-semibold mb-2">Historik</p>
+              <div className="space-y-1 max-h-40 overflow-y-auto">
+                {history.map(h => (
+                  <div key={h.id} className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">{h.reason}</span>
+                    <span className={h.amount > 0 ? 'text-success font-semibold' : 'text-destructive font-semibold'}>
+                      {h.amount > 0 ? '+' : ''}{h.amount} 💎
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

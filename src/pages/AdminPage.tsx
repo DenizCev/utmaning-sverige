@@ -25,6 +25,10 @@ export default function AdminPage() {
   const [compDesc, setCompDesc] = useState('');
   const [compStart, setCompStart] = useState('');
   const [compIsActive, setCompIsActive] = useState(false);
+  const [prize1, setPrize1] = useState('');
+  const [prize2, setPrize2] = useState('');
+  const [prize3, setPrize3] = useState('');
+  const [prizeOther, setPrizeOther] = useState('');
   const [competitions, setCompetitions] = useState<any[]>([]);
   const [selectedCompId, setSelectedCompId] = useState<string | null>(null);
 
@@ -102,14 +106,15 @@ export default function AdminPage() {
   const createCompetition = async () => {
     if (!compName || !compStart) { toast.error('Fyll i namn och starttid'); return; }
     setSaving(true);
-    const { error } = await supabase.from('competitions').insert({
+    const { error } = await (supabase.from('competitions') as any).insert({
       name: compName,
       description: compDesc || null,
       start_time: new Date(compStart).toISOString(),
       is_active: compIsActive,
+      prizes: { first: prize1, second: prize2, third: prize3, other: prizeOther },
     });
     if (error) toast.error('Kunde inte skapa tävling');
-    else { toast.success('Tävling skapad!'); setCompName(''); setCompDesc(''); setCompStart(''); fetchCompetitions(); }
+    else { toast.success('Tävling skapad!'); setCompName(''); setCompDesc(''); setCompStart(''); setPrize1(''); setPrize2(''); setPrize3(''); setPrizeOther(''); fetchCompetitions(); }
     setSaving(false);
   };
 
@@ -188,6 +193,13 @@ export default function AdminPage() {
               <div className="flex items-center gap-2">
                 <input type="checkbox" checked={compIsActive} onChange={e => setCompIsActive(e.target.checked)} id="active" />
                 <Label htmlFor="active">Aktiv direkt</Label>
+              </div>
+              <div className="space-y-2">
+                <Label>Priser</Label>
+                <Input value={prize1} onChange={e => setPrize1(e.target.value)} placeholder="1:a plats (t.ex. Presentkort 500kr)" />
+                <Input value={prize2} onChange={e => setPrize2(e.target.value)} placeholder="2:a plats" />
+                <Input value={prize3} onChange={e => setPrize3(e.target.value)} placeholder="3:e plats" />
+                <Input value={prizeOther} onChange={e => setPrizeOther(e.target.value)} placeholder="Övrigt (valfritt)" />
               </div>
               <Button onClick={createCompetition} disabled={saving} className="gradient-gold text-accent-foreground font-semibold">
                 <Plus className="h-4 w-4 mr-2" /> Skapa tävling
