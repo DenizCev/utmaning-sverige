@@ -1,0 +1,16 @@
+{
+  "name": "Sweden Challenge Race",
+  "short_name": "SC Race",
+  "description": "Sveriges månatliga utmaningstävling",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f2d5c",
+  "theme_color": "#0f2d5c",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+  ]
+}
