@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Save, Upload, Loader2, Palette, Trophy, Flame, Diamond } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Save, Upload, Loader2, Palette, Trophy, Flame, Diamond, Sparkles, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function AdminBranding() {
@@ -18,6 +19,20 @@ export function AdminBranding() {
   const [saving, setSaving] = useState(false);
   const logoRef = useRef<HTMLInputElement>(null);
   const bgRef = useRef<HTMLInputElement>(null);
+
+  // Skins management
+  const [skins, setSkins] = useState<any[]>([]);
+  const [newSkinName, setNewSkinName] = useState('');
+  const [newSkinEmoji, setNewSkinEmoji] = useState('');
+  const [newSkinCategory, setNewSkinCategory] = useState('accessory');
+  const [newSkinPrice, setNewSkinPrice] = useState(10);
+
+  const fetchSkins = async () => {
+    const { data } = await (supabase.from('skins') as any).select('*').order('price');
+    setSkins(data || []);
+  };
+
+  useEffect(() => { fetchSkins(); }, []);
 
   useEffect(() => {
     setLocalBranding(branding);
@@ -76,6 +91,21 @@ export function AdminBranding() {
     setSaving(false);
   };
 
+  const addSkin = async () => {
+    if (!newSkinName || !newSkinEmoji) { toast.error('Fyll i namn och emoji'); return; }
+    const { error } = await (supabase.from('skins') as any).insert({
+      name: newSkinName, emoji: newSkinEmoji, category: newSkinCategory, price: newSkinPrice,
+    });
+    if (error) toast.error('Kunde inte lägga till skin');
+    else { toast.success('Skin tillagt!'); setNewSkinName(''); setNewSkinEmoji(''); fetchSkins(); }
+  };
+
+  const deleteSkin = async (id: string) => {
+    await (supabase.from('skins') as any).delete().eq('id', id);
+    toast.success('Skin borttaget');
+    fetchSkins();
+  };
+
   const rankOrder = ['Bronze', 'Silver', 'Guld', 'Diamond', 'Golden Star', 'The Legend'];
   const rankEmojis: Record<string, string> = { Bronze: '🥉', Silver: '🥈', Guld: '🥇', Diamond: '💎', 'Golden Star': '⭐', 'The Legend': '🌟' };
 
@@ -86,6 +116,7 @@ export function AdminBranding() {
         <TabsTrigger value="diamonds"><Diamond className="h-4 w-4 mr-1" /> Diamanter</TabsTrigger>
         <TabsTrigger value="ranks"><Trophy className="h-4 w-4 mr-1" /> Ranks</TabsTrigger>
         <TabsTrigger value="streaks"><Flame className="h-4 w-4 mr-1" /> Streaks</TabsTrigger>
+        <TabsTrigger value="skins"><Sparkles className="h-4 w-4 mr-1" /> Skins</TabsTrigger>
       </TabsList>
 
       <TabsContent value="branding">
@@ -185,6 +216,64 @@ export function AdminBranding() {
             </Button>
           </CardContent>
         </Card>
+      </TabsContent>
+
+      <TabsContent value="skins">
+        <Card className="mb-6">
+          <CardHeader><CardTitle>Lägg till skin</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Namn</Label>
+                <Input value={newSkinName} onChange={e => setNewSkinName(e.target.value)} placeholder="T.ex. Vikingahjälm" />
+              </div>
+              <div className="space-y-2">
+                <Label>Emoji</Label>
+                <Input value={newSkinEmoji} onChange={e => setNewSkinEmoji(e.target.value)} placeholder="⚔️" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Kategori</Label>
+                <Select value={newSkinCategory} onValueChange={setNewSkinCategory}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hatt">Hatt</SelectItem>
+                    <SelectItem value="glasögon">Glasögon</SelectItem>
+                    <SelectItem value="effekt">Effekt</SelectItem>
+                    <SelectItem value="accessory">Tillbehör</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Pris (diamanter)</Label>
+                <Input type="number" min={0} value={newSkinPrice} onChange={e => setNewSkinPrice(Number(e.target.value))} />
+              </div>
+            </div>
+            <Button onClick={addSkin} className="gradient-gold text-accent-foreground font-semibold">
+              <Plus className="h-4 w-4 mr-2" /> Lägg till skin
+            </Button>
+          </CardContent>
+        </Card>
+
+        <div className="space-y-2">
+          {skins.map(skin => (
+            <Card key={skin.id}>
+              <CardContent className="flex items-center justify-between py-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">{skin.emoji}</span>
+                  <div>
+                    <p className="font-semibold text-sm">{skin.name}</p>
+                    <p className="text-xs text-muted-foreground">{skin.category} · {skin.price} 💎</p>
+                  </div>
+                </div>
+                <Button size="sm" variant="ghost" onClick={() => deleteSkin(skin.id)} className="text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </TabsContent>
     </Tabs>
   );

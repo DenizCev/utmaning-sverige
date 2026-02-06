@@ -175,7 +175,9 @@ export default function CompetitionLeaderboardPage() {
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold truncate">{entry.username} {user && entry.user_id === user.id && '(du)'}</p>
+                  <Link to={`/profil/${entry.user_id}`} className="hover:underline">
+                    <p className="font-semibold truncate">{entry.username} {user && entry.user_id === user.id && '(du)'}</p>
+                  </Link>
                   <p className="text-xs text-muted-foreground">{entry.completed_challenges} utmaningar klara</p>
                 </div>
                 <Badge className="gradient-gold text-accent-foreground border-0 font-bold">

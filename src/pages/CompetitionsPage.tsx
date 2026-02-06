@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useDiamonds } from '@/hooks/useDiamonds';
+import { useTeams } from '@/hooks/useTeams';
 import { CountdownTimer } from '@/components/CountdownTimer';
 import { DiamondBalance } from '@/components/DiamondBalance';
 import { ShareButton } from '@/components/ShareButton';
@@ -10,7 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trophy, Users, Zap, ChevronRight, CheckCircle2, Lock, Diamond, Eye, Gift, Calendar, Clock } from 'lucide-react';
+import { Trophy, Users, Zap, ChevronRight, CheckCircle2, Lock, Diamond, Eye, Gift, Calendar, Clock, UsersRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -29,6 +30,7 @@ export default function CompetitionsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { diamonds, dailyAds, rulesAccepted, watchAd, spendDiamonds } = useDiamonds();
+  const { myTeams } = useTeams();
   const [activeComps, setActiveComps] = useState<Competition[]>([]);
   const [finishedComps, setFinishedComps] = useState<Competition[]>([]);
   const [memberCounts, setMemberCounts] = useState<Record<string, number>>({});
@@ -110,7 +112,7 @@ export default function CompetitionsPage() {
     setLoading(false);
   };
 
-  const handleJoin = async (comp: Competition) => {
+  const handleJoin = async (comp: Competition, teamId?: string) => {
     if (!user) { navigate('/auth'); return; }
     if (!rulesAccepted) {
       toast.error('Du måste godkänna reglerna först');
@@ -126,14 +128,16 @@ export default function CompetitionsPage() {
       const spent = await spendDiamonds(cost);
       if (!spent) { toast.error('Kunde inte dra diamanter'); return; }
     }
+    const insertData: any = { competition_id: comp.id, user_id: user.id };
+    if (teamId) insertData.team_id = teamId;
     const { error } = await supabase
       .from('competition_memberships')
-      .insert({ competition_id: comp.id, user_id: user.id });
+      .insert(insertData);
     if (error) {
       if (error.code === '23505') toast.info('Du har redan anmält dig!');
       else toast.error('Kunde inte anmäla dig');
     } else {
-      toast.success('Du är anmäld! Lycka till! 🎉');
+      toast.success(teamId ? 'Laget är anmält! 🎉' : 'Du är anmäld! Lycka till! 🎉');
       setJoinedComps(prev => new Set([...prev, comp.id]));
       setMemberCounts(prev => ({ ...prev, [comp.id]: (prev[comp.id] || 0) + 1 }));
     }
@@ -196,9 +200,16 @@ export default function CompetitionsPage() {
 
           <div className="flex flex-wrap gap-2">
             {showJoin && !joined ? (
-              <Button onClick={() => handleJoin(comp)} className="gradient-gold text-accent-foreground font-bold">
-                <Diamond className="h-4 w-4 mr-1" /> Anmäl dig {cost > 0 ? `(${cost} 💎)` : '(Gratis)'}
-              </Button>
+              <>
+                <Button onClick={() => handleJoin(comp)} className="gradient-gold text-accent-foreground font-bold">
+                  <Diamond className="h-4 w-4 mr-1" /> Anmäl dig {cost > 0 ? `(${cost} 💎)` : '(Gratis)'}
+                </Button>
+                {myTeams.length > 0 && myTeams.filter(t => t.created_by === user?.id).map(t => (
+                  <Button key={t.id} onClick={() => handleJoin(comp, t.id)} variant="outline" size="sm">
+                    <UsersRound className="h-4 w-4 mr-1" /> {t.name}
+                  </Button>
+                ))}
+              </>
             ) : joined ? (
               <Badge variant="outline" className="text-success border-success px-3 py-1.5">
                 <CheckCircle2 className="h-4 w-4 mr-1" /> Anmäld

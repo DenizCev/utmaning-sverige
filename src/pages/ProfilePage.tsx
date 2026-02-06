@@ -14,6 +14,7 @@ import { ShareButton } from '@/components/ShareButton';
 import { DailyClaimButton } from '@/components/DailyClaimButton';
 import { StreakDisplay } from '@/components/StreakDisplay';
 import { RankBadge } from '@/components/RankBadge';
+import { SkinShop } from '@/components/SkinShop';
 import { Camera, Save, Trophy, Loader2, Diamond, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -166,6 +167,13 @@ export default function ProfilePage() {
               </div>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Skins */}
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <SkinShop />
         </CardContent>
       </Card>
 

@@ -189,6 +189,7 @@ export type Database = {
           daily_ad_views: number
           daily_share_views: number
           diamonds: number
+          equipped_skin: string | null
           id: string
           last_ad_date: string | null
           last_claim_date: string | null
@@ -207,6 +208,7 @@ export type Database = {
           daily_ad_views?: number
           daily_share_views?: number
           diamonds?: number
+          equipped_skin?: string | null
           id?: string
           last_ad_date?: string | null
           last_claim_date?: string | null
@@ -225,6 +227,7 @@ export type Database = {
           daily_ad_views?: number
           daily_share_views?: number
           diamonds?: number
+          equipped_skin?: string | null
           id?: string
           last_ad_date?: string | null
           last_claim_date?: string | null
@@ -235,6 +238,33 @@ export type Database = {
           updated_at?: string
           user_id?: string
           username?: string
+        }
+        Relationships: []
+      }
+      skins: {
+        Row: {
+          category: string
+          created_at: string
+          emoji: string
+          id: string
+          name: string
+          price: number
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          emoji: string
+          id?: string
+          name: string
+          price?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          emoji?: string
+          id?: string
+          name?: string
+          price?: number
         }
         Relationships: []
       }
@@ -405,6 +435,38 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_skins: {
+        Row: {
+          equipped: boolean
+          id: string
+          purchased_at: string
+          skin_id: string
+          user_id: string
+        }
+        Insert: {
+          equipped?: boolean
+          id?: string
+          purchased_at?: string
+          skin_id: string
+          user_id: string
+        }
+        Update: {
+          equipped?: boolean
+          id?: string
+          purchased_at?: string
+          skin_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_skins_skin_id_fkey"
+            columns: ["skin_id"]
+            isOneToOne: false
+            referencedRelation: "skins"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

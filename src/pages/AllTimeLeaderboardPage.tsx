@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { ShareButton } from '@/components/ShareButton';
+import { UserSearch } from '@/components/UserSearch';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Trophy, Medal, Star } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface AllTimeEntry {
   user_id: string;
@@ -109,8 +111,12 @@ export default function AllTimeLeaderboardPage() {
         )}
       </div>
 
-      <div className="flex justify-center mb-6">
+      <div className="flex justify-center mb-4">
         <ShareButton text="Kolla all-time leaderboarden på Sweden Challenge Race! 🏆🇸🇪" />
+      </div>
+
+      <div className="mb-6">
+        <UserSearch />
       </div>
 
       {loading ? (
@@ -132,7 +138,9 @@ export default function AllTimeLeaderboardPage() {
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold truncate">{entry.username} {user && entry.user_id === user.id && '(du)'}</p>
+                  <Link to={`/profil/${entry.user_id}`} className="hover:underline">
+                    <p className="font-semibold truncate">{entry.username} {user && entry.user_id === user.id && '(du)'}</p>
+                  </Link>
                   <p className="text-xs text-muted-foreground">{entry.competitions_joined} tävlingar · {entry.challenges_completed} utmaningar</p>
                 </div>
                 <Badge className="gradient-gold text-accent-foreground border-0 font-bold">
