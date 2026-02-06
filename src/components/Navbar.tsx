@@ -26,7 +26,12 @@ export function Navbar() {
         <div className="hidden md:flex items-center gap-4">
           {user ? (
             <>
-              <Link to="/leaderboard">
+              <Link to="/tavlingar">
+                <Button variant="ghost" size="sm" className="text-primary-foreground hover:bg-sweden-blue-light/20">
+                  Tävlingar
+                </Button>
+              </Link>
+              <Link to="/leaderboard-alltime">
                 <Button variant="ghost" size="sm" className="text-primary-foreground hover:bg-sweden-blue-light/20">
                   Leaderboard
                 </Button>
@@ -72,7 +77,8 @@ export function Navbar() {
         <div className="md:hidden gradient-sweden border-t border-sweden-blue-light/20 px-4 py-4 flex flex-col gap-2">
           {user ? (
             <>
-              <Link to="/leaderboard" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">Leaderboard</Link>
+              <Link to="/tavlingar" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">Tävlingar</Link>
+              <Link to="/leaderboard-alltime" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">Leaderboard</Link>
               <Link to="/regler" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">Regler</Link>
               <Link to="/profil" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">Profil</Link>
               {isAdmin && <Link to="/admin" onClick={() => setMobileOpen(false)} className="text-sweden-gold py-2">Admin-panel</Link>}

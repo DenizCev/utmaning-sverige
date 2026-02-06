@@ -25,6 +25,7 @@ export default function AdminPage() {
   const [compDesc, setCompDesc] = useState('');
   const [compStart, setCompStart] = useState('');
   const [compIsActive, setCompIsActive] = useState(false);
+  const [entryDiamonds, setEntryDiamonds] = useState(15);
   const [prize1, setPrize1] = useState('');
   const [prize2, setPrize2] = useState('');
   const [prize3, setPrize3] = useState('');
@@ -111,10 +112,11 @@ export default function AdminPage() {
       description: compDesc || null,
       start_time: new Date(compStart).toISOString(),
       is_active: compIsActive,
+      entry_diamonds: entryDiamonds,
       prizes: { first: prize1, second: prize2, third: prize3, other: prizeOther },
     });
     if (error) toast.error('Kunde inte skapa tävling');
-    else { toast.success('Tävling skapad!'); setCompName(''); setCompDesc(''); setCompStart(''); setPrize1(''); setPrize2(''); setPrize3(''); setPrizeOther(''); fetchCompetitions(); }
+    else { toast.success('Tävling skapad!'); setCompName(''); setCompDesc(''); setCompStart(''); setEntryDiamonds(15); setPrize1(''); setPrize2(''); setPrize3(''); setPrizeOther(''); fetchCompetitions(); }
     setSaving(false);
   };
 
@@ -195,6 +197,11 @@ export default function AdminPage() {
                 <Label htmlFor="active">Aktiv direkt</Label>
               </div>
               <div className="space-y-2">
+                <Label>Antal diamanter för anmälan</Label>
+                <Input type="number" min={0} value={entryDiamonds} onChange={e => setEntryDiamonds(Number(e.target.value))} placeholder="0 = gratis" />
+                <p className="text-xs text-muted-foreground">Sätt till 0 för gratis anmälan</p>
+              </div>
+              <div className="space-y-2">
                 <Label>Priser</Label>
                 <Input value={prize1} onChange={e => setPrize1(e.target.value)} placeholder="1:a plats (t.ex. Presentkort 500kr)" />
                 <Input value={prize2} onChange={e => setPrize2(e.target.value)} placeholder="2:a plats" />
@@ -213,7 +220,7 @@ export default function AdminPage() {
                 <CardContent className="flex items-center justify-between py-4">
                   <div>
                     <p className="font-semibold">{c.name}</p>
-                    <p className="text-sm text-muted-foreground">Start: {new Date(c.start_time).toLocaleString('sv-SE')}</p>
+                    <p className="text-sm text-muted-foreground">Start: {new Date(c.start_time).toLocaleString('sv-SE')} · {c.entry_diamonds || 0} 💎</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant={c.is_active ? 'default' : 'secondary'}>{c.is_active ? 'Aktiv' : 'Inaktiv'}</Badge>
