@@ -12,6 +12,7 @@ import ChallengePage from "./pages/ChallengePage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import ProfilePage from "./pages/ProfilePage";
 import AdminPage from "./pages/AdminPage";
+import RulesPage from "./pages/RulesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/utmaning/:id" element={<ChallengePage />} />
             <Route path="/leaderboard" element={<LeaderboardPage />} />
             <Route path="/profil" element={<ProfilePage />} />
+            <Route path="/regler" element={<RulesPage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

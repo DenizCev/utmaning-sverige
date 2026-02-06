@@ -92,6 +92,7 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          prizes: Json | null
           start_time: string
           updated_at: string
         }
@@ -102,6 +103,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          prizes?: Json | null
           start_time: string
           updated_at?: string
         }
@@ -112,8 +114,33 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          prizes?: Json | null
           start_time?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      diamond_history: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          reason: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          reason: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          reason?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -121,7 +148,14 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          daily_ad_views: number
+          daily_share_views: number
+          diamonds: number
           id: string
+          last_ad_date: string | null
+          last_share_date: string | null
+          rules_accepted: boolean
+          rules_accepted_at: string | null
           updated_at: string
           user_id: string
           username: string
@@ -129,7 +163,14 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          daily_ad_views?: number
+          daily_share_views?: number
+          diamonds?: number
           id?: string
+          last_ad_date?: string | null
+          last_share_date?: string | null
+          rules_accepted?: boolean
+          rules_accepted_at?: string | null
           updated_at?: string
           user_id: string
           username: string
@@ -137,7 +178,14 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          daily_ad_views?: number
+          daily_share_views?: number
+          diamonds?: number
           id?: string
+          last_ad_date?: string | null
+          last_share_date?: string | null
+          rules_accepted?: boolean
+          rules_accepted_at?: string | null
           updated_at?: string
           user_id?: string
           username?: string

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Medal } from 'lucide-react';
+import { Trophy, Medal, Gift } from 'lucide-react';
 
 interface LeaderboardEntry {
   user_id: string;
@@ -13,13 +13,20 @@ interface LeaderboardEntry {
   completed_challenges: number;
 }
 
+interface Prizes {
+  first?: string;
+  second?: string;
+  third?: string;
+  other?: string;
+}
+
 export default function LeaderboardPage() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [prizes, setPrizes] = useState<Prizes>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchLeaderboard();
-
     const channel = supabase
       .channel('leaderboard-updates')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'submissions' }, () => {
@@ -30,17 +37,15 @@ export default function LeaderboardPage() {
   }, []);
 
   const fetchLeaderboard = async () => {
-    // Get the active competition
-    const { data: comp } = await supabase
-      .from('competitions')
-      .select('id')
+    const { data: comp } = await (supabase.from('competitions') as any)
+      .select('id, prizes')
       .order('start_time', { ascending: false })
       .limit(1)
       .maybeSingle();
 
     if (!comp) { setLoading(false); return; }
+    setPrizes((comp.prizes as Prizes) || {});
 
-    // Get all approved submissions for this competition's challenges
     const { data: challenges } = await supabase
       .from('challenges')
       .select('id, points')
@@ -59,7 +64,6 @@ export default function LeaderboardPage() {
 
     if (!subs) { setLoading(false); return; }
 
-    // Aggregate by user
     const userMap: Record<string, { total_points: number; completed: number }> = {};
     for (const s of subs) {
       if (!userMap[s.user_id]) userMap[s.user_id] = { total_points: 0, completed: 0 };
@@ -98,6 +102,8 @@ export default function LeaderboardPage() {
     return '';
   };
 
+  const hasPrizes = prizes.first || prizes.second || prizes.third;
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <div className="text-center mb-8">
@@ -105,6 +111,22 @@ export default function LeaderboardPage() {
         <h1 className="text-3xl font-display font-bold">Leaderboard</h1>
         <p className="text-muted-foreground">Realtidsranking för aktuell tävling</p>
       </div>
+
+      {hasPrizes && (
+        <Card className="mb-6 border-sweden-gold/30">
+          <CardContent className="pt-4">
+            <h3 className="font-display font-bold flex items-center gap-2 mb-3">
+              <Gift className="h-5 w-5 text-sweden-gold" /> Priser i denna tävling
+            </h3>
+            <div className="space-y-1 text-sm">
+              {prizes.first && <p><span className="font-semibold text-sweden-gold">🥇 1:a plats:</span> {prizes.first}</p>}
+              {prizes.second && <p><span className="font-semibold text-muted-foreground">🥈 2:a plats:</span> {prizes.second}</p>}
+              {prizes.third && <p><span className="font-semibold text-orange-600">🥉 3:e plats:</span> {prizes.third}</p>}
+              {prizes.other && <p className="text-muted-foreground">{prizes.other}</p>}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {loading ? (
         <div className="text-center py-16 text-muted-foreground">Laddar...</div>

@@ -31,6 +31,11 @@ export function Navbar() {
                   Leaderboard
                 </Button>
               </Link>
+              <Link to="/regler">
+                <Button variant="ghost" size="sm" className="text-primary-foreground hover:bg-sweden-blue-light/20">
+                  Regler
+                </Button>
+              </Link>
               <Link to="/profil">
                 <Button variant="ghost" size="sm" className="text-primary-foreground hover:bg-sweden-blue-light/20">
                   <User className="h-4 w-4 mr-1" /> Profil
@@ -68,6 +73,7 @@ export function Navbar() {
           {user ? (
             <>
               <Link to="/leaderboard" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">Leaderboard</Link>
+              <Link to="/regler" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">Regler</Link>
               <Link to="/profil" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">Profil</Link>
               {isAdmin && <Link to="/admin" onClick={() => setMobileOpen(false)} className="text-sweden-gold py-2">Admin-panel</Link>}
               <button onClick={() => { handleSignOut(); setMobileOpen(false); }} className="text-primary-foreground py-2 text-left">Logga ut</button>
