@@ -39,27 +39,21 @@ export function CharacterAvatar({
   size = 'md',
   className,
 }: CharacterAvatarProps) {
-  const initials = username?.slice(0, 2).toUpperCase() || '??';
-
   return (
-    <div className={cn('relative inline-flex', className)}>
+    <div className={cn('inline-flex items-center gap-1.5', className)}>
       <Avatar className={sizeClasses[size]}>
         <AvatarImage src={avatarUrl || undefined} />
         <AvatarFallback className={cn('gradient-sweden text-primary-foreground', textSizes[size])}>
-          {avatarUrl ? initials : defaultCharacter}
+          {defaultCharacter}
         </AvatarFallback>
       </Avatar>
-      {equippedSkin && (
-        <span
-          className={cn(
-            'absolute flex items-center justify-center rounded-full bg-background shadow-sm border',
-            skinSizes[size]
-          )}
-          title="Utrustad skin"
-        >
-          {equippedSkin.slice(0, 2)}
-        </span>
-      )}
     </div>
   );
+}
+
+/** Renders the equipped skin emoji inline (use next to username text) */
+export function EquippedSkinBadge({ skin, size = 'md' }: { skin?: string | null; size?: 'sm' | 'md' | 'lg' | 'xl' }) {
+  if (!skin) return null;
+  const sizeClass = { sm: 'text-sm', md: 'text-base', lg: 'text-lg', xl: 'text-xl' }[size];
+  return <span className={sizeClass} title="Utrustad skin">{skin}</span>;
 }

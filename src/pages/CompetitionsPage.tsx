@@ -6,12 +6,13 @@ import { useTeams } from '@/hooks/useTeams';
 import { CountdownTimer } from '@/components/CountdownTimer';
 import { DiamondBalance } from '@/components/DiamondBalance';
 import { ShareButton } from '@/components/ShareButton';
+import { CompetitionJoinButton } from '@/components/CompetitionJoinButton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trophy, Users, Zap, ChevronRight, CheckCircle2, Lock, Diamond, Eye, Gift, Calendar, Clock, UsersRound } from 'lucide-react';
+import { Trophy, Users, Zap, ChevronRight, CheckCircle2, Lock, Diamond, Eye, Gift, Calendar, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -200,16 +201,12 @@ export default function CompetitionsPage() {
 
           <div className="flex flex-wrap gap-2">
             {showJoin && !joined ? (
-              <>
-                <Button onClick={() => handleJoin(comp)} className="gradient-gold text-accent-foreground font-bold">
-                  <Diamond className="h-4 w-4 mr-1" /> Anmäl dig {cost > 0 ? `(${cost} 💎)` : '(Gratis)'}
-                </Button>
-                {myTeams.length > 0 && myTeams.filter(t => t.created_by === user?.id).map(t => (
-                  <Button key={t.id} onClick={() => handleJoin(comp, t.id)} variant="outline" size="sm">
-                    <UsersRound className="h-4 w-4 mr-1" /> {t.name}
-                  </Button>
-                ))}
-              </>
+              <CompetitionJoinButton
+                cost={cost}
+                myTeams={myTeams}
+                userId={user?.id}
+                onJoin={(teamId) => handleJoin(comp, teamId)}
+              />
             ) : joined ? (
               <Badge variant="outline" className="text-success border-success px-3 py-1.5">
                 <CheckCircle2 className="h-4 w-4 mr-1" /> Anmäld

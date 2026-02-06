@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { ShareButton } from '@/components/ShareButton';
 import { UserSearch } from '@/components/UserSearch';
 import { Card, CardContent } from '@/components/ui/card';
-import { CharacterAvatar } from '@/components/CharacterAvatar';
+import { CharacterAvatar, EquippedSkinBadge } from '@/components/CharacterAvatar';
 import { Badge } from '@/components/ui/badge';
 import { Trophy, Medal, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -141,7 +141,9 @@ export default function AllTimeLeaderboardPage() {
                 />
                 <div className="flex-1 min-w-0">
                   <Link to={`/profil/${entry.user_id}`} className="hover:underline">
-                    <p className="font-semibold truncate">{entry.username} {user && entry.user_id === user.id && '(du)'}</p>
+                    <p className="font-semibold truncate">
+                      {entry.username} <EquippedSkinBadge skin={entry.equipped_skin} size="sm" /> {user && entry.user_id === user.id && '(du)'}
+                    </p>
                   </Link>
                   <p className="text-xs text-muted-foreground">{entry.competitions_joined} tävlingar · {entry.challenges_completed} utmaningar</p>
                 </div>

@@ -3,10 +3,10 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { RankBadge } from '@/components/RankBadge';
+import { CharacterAvatar, EquippedSkinBadge } from '@/components/CharacterAvatar';
 import { Card, CardContent } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Flame, Zap, ArrowLeft } from 'lucide-react';
+import { Trophy, Flame, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
@@ -72,21 +72,16 @@ export default function PublicProfilePage() {
       <Card className="mb-6">
         <CardContent className="pt-6">
           <div className="flex items-center gap-6 mb-4">
-            <div className="relative">
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={profile.avatar_url || undefined} />
-                <AvatarFallback className="gradient-sweden text-primary-foreground text-xl">
-                  {profile.username?.slice(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              {equippedSkins.length > 0 && (
-                <div className="absolute -top-2 -right-2 text-xl">
-                  {equippedSkins.slice(0, 3).join('')}
-                </div>
-              )}
-            </div>
+            <CharacterAvatar
+              username={profile.username}
+              avatarUrl={profile.avatar_url}
+              size="xl"
+            />
             <div>
-              <h1 className="text-2xl font-display font-bold">{profile.username}</h1>
+              <h1 className="text-2xl font-display font-bold flex items-center gap-2">
+                {profile.username}
+                <EquippedSkinBadge skin={profile.equipped_skin} size="xl" />
+              </h1>
               <div className="flex items-center gap-2 mt-1">
                 <RankBadge points={stats.points} />
               </div>

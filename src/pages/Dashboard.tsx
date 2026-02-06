@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useDiamonds } from '@/hooks/useDiamonds';
+import { useAppSettings } from '@/hooks/useAppSettings';
 import { CountdownTimer } from '@/components/CountdownTimer';
 import { DiamondBalance } from '@/components/DiamondBalance';
 import { ShareButton } from '@/components/ShareButton';
@@ -37,6 +38,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { diamonds, dailyAds, dailyShares, rulesAccepted, watchAd, spendDiamonds } = useDiamonds();
+  const { branding } = useAppSettings();
   const [competition, setCompetition] = useState<Competition | null>(null);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [memberCount, setMemberCount] = useState(0);
@@ -179,10 +181,16 @@ export default function Dashboard() {
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       {/* Hero */}
       <div className="text-center mb-10 animate-slide-up">
+        {branding.logo_url && (
+          <img src={branding.logo_url} alt={branding.name} className="h-16 w-auto mx-auto mb-4 rounded-lg" />
+        )}
         <Badge className="mb-4 gradient-gold text-accent-foreground border-0 px-4 py-1 text-sm font-medium">
           {competitionStarted ? 'Pågående tävling' : 'Kommande tävling'}
         </Badge>
         <h1 className="text-3xl md:text-5xl font-display font-bold mb-3">{competition.name}</h1>
+        {branding.hero_text && (
+          <p className="text-muted-foreground text-sm mb-2">{branding.hero_text}</p>
+        )}
         {competition.description && (
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">{competition.description}</p>
         )}

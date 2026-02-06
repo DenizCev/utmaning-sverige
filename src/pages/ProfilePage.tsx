@@ -8,8 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CharacterAvatar } from '@/components/CharacterAvatar';
+import { CharacterAvatar, EquippedSkinBadge } from '@/components/CharacterAvatar';
 import { DiamondBalance } from '@/components/DiamondBalance';
 import { ShareButton } from '@/components/ShareButton';
 import { DailyClaimButton } from '@/components/DailyClaimButton';
@@ -109,6 +108,10 @@ export default function ProfilePage() {
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
             </div>
             <div>
+              <div className="flex items-center gap-2">
+                <span className="font-display font-bold text-lg">{username}</span>
+                <EquippedSkinBadge skin={profile?.equipped_skin} size="lg" />
+              </div>
               <p className="text-sm text-muted-foreground">{user.email}</p>
               <div className="flex items-center gap-2 mt-1">
                 <RankBadge points={stats.points} />
