@@ -5,6 +5,7 @@ import { useDiamonds } from '@/hooks/useDiamonds';
 import { CountdownTimer } from '@/components/CountdownTimer';
 import { DiamondBalance } from '@/components/DiamondBalance';
 import { ShareButton } from '@/components/ShareButton';
+import { DailyClaimButton } from '@/components/DailyClaimButton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -237,6 +238,13 @@ export default function Dashboard() {
           </Badge>
         )}
       </div>
+
+      {/* Daily Claim */}
+      {user && (
+        <div className="glass-card rounded-xl p-4 mb-6 flex justify-center">
+          <DailyClaimButton />
+        </div>
+      )}
 
       {/* Earn diamonds + share */}
       {user && !hasJoined && (

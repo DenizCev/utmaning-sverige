@@ -9,8 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Plus, Trash2, CheckCircle, XCircle, Eye, Loader2, UserPlus, Flag } from 'lucide-react';
+import { Shield, Plus, Trash2, CheckCircle, XCircle, Eye, Loader2, UserPlus, Flag, Palette } from 'lucide-react';
 import { AdminParticipants } from '@/components/AdminParticipants';
+import { AdminBranding } from '@/components/AdminBranding';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
@@ -234,6 +235,7 @@ export default function AdminPage() {
           <TabsTrigger value="participants">Deltagare</TabsTrigger>
           <TabsTrigger value="submissions">Inlämningar</TabsTrigger>
           <TabsTrigger value="admins">Admins</TabsTrigger>
+          <TabsTrigger value="settings"><Palette className="h-4 w-4 mr-1" /> Inställningar</TabsTrigger>
         </TabsList>
 
         {/* COMPETITIONS TAB */}
@@ -457,6 +459,11 @@ export default function AdminPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* SETTINGS TAB */}
+        <TabsContent value="settings">
+          <AdminBranding />
         </TabsContent>
       </Tabs>
     </div>

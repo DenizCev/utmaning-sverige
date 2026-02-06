@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Trophy, User, Shield, LogOut, Menu, X } from 'lucide-react';
+import { Trophy, User, Shield, LogOut, Menu, X, Users } from 'lucide-react';
 import { useState } from 'react';
 
 export function Navbar() {
@@ -39,6 +39,11 @@ export function Navbar() {
               <Link to="/regler">
                 <Button variant="ghost" size="sm" className="text-primary-foreground hover:bg-sweden-blue-light/20">
                   Regler
+                </Button>
+              </Link>
+              <Link to="/lag">
+                <Button variant="ghost" size="sm" className="text-primary-foreground hover:bg-sweden-blue-light/20">
+                  <Users className="h-4 w-4 mr-1" /> Lag
                 </Button>
               </Link>
               <Link to="/profil">
@@ -80,6 +85,7 @@ export function Navbar() {
               <Link to="/tavlingar" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">Tävlingar</Link>
               <Link to="/leaderboard-alltime" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">Leaderboard</Link>
               <Link to="/regler" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">Regler</Link>
+              <Link to="/lag" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">Lag</Link>
               <Link to="/profil" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">Profil</Link>
               {isAdmin && <Link to="/admin" onClick={() => setMobileOpen(false)} className="text-sweden-gold py-2">Admin-panel</Link>}
               <button onClick={() => { handleSignOut(); setMobileOpen(false); }} className="text-primary-foreground py-2 text-left">Logga ut</button>
