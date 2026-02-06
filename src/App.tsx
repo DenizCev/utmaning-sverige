@@ -13,6 +13,7 @@ import CompetitionLeaderboardPage from "./pages/CompetitionLeaderboardPage";
 import AllTimeLeaderboardPage from "./pages/AllTimeLeaderboardPage";
 import ProfilePage from "./pages/ProfilePage";
 import PublicProfilePage from "./pages/PublicProfilePage";
+import SearchPage from "./pages/SearchPage";
 import TeamPage from "./pages/TeamPage";
 import AdminPage from "./pages/AdminPage";
 import RulesPage from "./pages/RulesPage";
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/leaderboard-alltime" element={<AllTimeLeaderboardPage />} />
             <Route path="/profil" element={<ProfilePage />} />
             <Route path="/profil/:userId" element={<PublicProfilePage />} />
+            <Route path="/sok" element={<SearchPage />} />
             <Route path="/lag" element={<TeamPage />} />
             <Route path="/regler" element={<RulesPage />} />
             <Route path="/admin" element={<AdminPage />} />

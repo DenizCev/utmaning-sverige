@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { CharacterAvatar } from '@/components/CharacterAvatar';
 import { DiamondBalance } from '@/components/DiamondBalance';
 import { ShareButton } from '@/components/ShareButton';
 import { DailyClaimButton } from '@/components/DailyClaimButton';
@@ -96,12 +97,12 @@ export default function ProfilePage() {
         <CardContent className="pt-6">
           <div className="flex items-center gap-6 mb-4">
             <div className="relative">
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={avatarUrl || undefined} />
-                <AvatarFallback className="gradient-sweden text-primary-foreground text-xl">
-                  {username?.slice(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+              <CharacterAvatar
+                username={username}
+                avatarUrl={avatarUrl}
+                equippedSkin={profile?.equipped_skin}
+                size="xl"
+              />
               <button onClick={() => fileRef.current?.click()} className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full gradient-gold flex items-center justify-center shadow-md">
                 <Camera className="h-4 w-4 text-accent-foreground" />
               </button>
