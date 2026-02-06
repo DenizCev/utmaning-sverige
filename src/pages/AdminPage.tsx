@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Plus, Trash2, CheckCircle, XCircle, Eye, Loader2 } from 'lucide-react';
+import { Shield, Plus, Trash2, CheckCircle, XCircle, Eye, Loader2, UserPlus, Flag } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
@@ -17,7 +17,6 @@ export default function AdminPage() {
   const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
 
-  // Tab state
   const [activeTab, setActiveTab] = useState('competitions');
 
   // Competition state
@@ -43,6 +42,10 @@ export default function AdminPage() {
   // Submissions state
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [subLoading, setSubLoading] = useState(false);
+
+  // Admin management state
+  const [newAdminUsername, setNewAdminUsername] = useState('');
+  const [addingAdmin, setAddingAdmin] = useState(false);
 
   const [saving, setSaving] = useState(false);
 
@@ -81,15 +84,12 @@ export default function AdminPage() {
       .select('*')
       .in('challenge_id', chs.map(c => c.id))
       .order('submitted_at', { ascending: false });
-    
-    // Enrich with profile data
+
     if (data && data.length > 0) {
       const userIds = [...new Set(data.map(s => s.user_id))];
       const { data: profiles } = await supabase.from('profiles').select('user_id, username').in('user_id', userIds);
       const profileMap = Object.fromEntries((profiles || []).map(p => [p.user_id, p.username]));
-      
-      const challengeMap = Object.fromEntries((chs || []).map(c => [c.id, c]));
-      // Get full challenge data for mapping
+
       const { data: fullChs } = await supabase.from('challenges').select('*').eq('competition_id', selectedCompId);
       const fullChallengeMap = Object.fromEntries((fullChs || []).map(c => [c.id, c]));
 
@@ -126,6 +126,14 @@ export default function AdminPage() {
     toast.success(!current ? 'Tävling aktiverad' : 'Tävling inaktiverad');
   };
 
+  const endCompetition = async (id: string) => {
+    await (supabase.from('competitions') as any)
+      .update({ is_active: false, end_time: new Date().toISOString() })
+      .eq('id', id);
+    fetchCompetitions();
+    toast.success('Tävlingen är nu avslutad! 🏁');
+  };
+
   const addChallenge = async () => {
     if (!selectedCompId || !chTitle || !chDesc) { toast.error('Fyll i alla fält'); return; }
     const nextOrder = challenges.length + 1;
@@ -150,7 +158,7 @@ export default function AdminPage() {
   const reviewSubmission = async (id: string, status: 'approved' | 'rejected', challengePoints: number) => {
     const updates: any = { status, reviewed_at: new Date().toISOString(), reviewed_by: user!.id };
     if (status === 'approved') updates.points_awarded = challengePoints;
-    
+
     const { error } = await supabase.from('submissions').update(updates).eq('id', id);
     if (error) toast.error('Kunde inte uppdatera');
     else {
@@ -159,7 +167,57 @@ export default function AdminPage() {
     }
   };
 
+  const addAdmin = async () => {
+    if (!newAdminUsername.trim()) { toast.error('Ange ett användarnamn'); return; }
+    setAddingAdmin(true);
+
+    // Find user by username
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_id, username')
+      .eq('username', newAdminUsername.trim())
+      .maybeSingle();
+
+    if (!profile) {
+      toast.error(`Användare "${newAdminUsername}" hittades inte`);
+      setAddingAdmin(false);
+      return;
+    }
+
+    // Check if already admin
+    const { data: existingRole } = await supabase
+      .from('user_roles')
+      .select('id')
+      .eq('user_id', profile.user_id)
+      .eq('role', 'admin')
+      .maybeSingle();
+
+    if (existingRole) {
+      toast.info(`${profile.username} är redan admin`);
+      setAddingAdmin(false);
+      return;
+    }
+
+    const { error } = await supabase
+      .from('user_roles')
+      .insert({ user_id: profile.user_id, role: 'admin' });
+
+    if (error) {
+      toast.error('Kunde inte lägga till admin');
+    } else {
+      toast.success(`${profile.username} är nu admin! 🛡️`);
+      setNewAdminUsername('');
+    }
+    setAddingAdmin(false);
+  };
+
   if (!isAdmin) return null;
+
+  const getCompStatus = (c: any) => {
+    if (c.end_time) return 'ended';
+    if (c.is_active) return 'active';
+    return 'inactive';
+  };
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -169,10 +227,11 @@ export default function AdminPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6">
+        <TabsList className="mb-6 flex-wrap">
           <TabsTrigger value="competitions">Tävlingar</TabsTrigger>
           <TabsTrigger value="challenges">Utmaningar {selectedCompId && `(${competitions.find(c => c.id === selectedCompId)?.name || ''})`}</TabsTrigger>
           <TabsTrigger value="submissions">Inlämningar</TabsTrigger>
+          <TabsTrigger value="admins">Admins</TabsTrigger>
         </TabsList>
 
         {/* COMPETITIONS TAB */}
@@ -215,25 +274,40 @@ export default function AdminPage() {
           </Card>
 
           <div className="space-y-3">
-            {competitions.map(c => (
-              <Card key={c.id}>
-                <CardContent className="flex items-center justify-between py-4">
-                  <div>
-                    <p className="font-semibold">{c.name}</p>
-                    <p className="text-sm text-muted-foreground">Start: {new Date(c.start_time).toLocaleString('sv-SE')} · {c.entry_diamonds || 0} 💎</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={c.is_active ? 'default' : 'secondary'}>{c.is_active ? 'Aktiv' : 'Inaktiv'}</Badge>
-                    <Button size="sm" variant="outline" onClick={() => toggleActive(c.id, c.is_active)}>
-                      {c.is_active ? 'Inaktivera' : 'Aktivera'}
-                    </Button>
-                    <Button size="sm" variant={selectedCompId === c.id ? 'default' : 'outline'} onClick={() => { setSelectedCompId(c.id); setActiveTab('challenges'); }}>
-                      {selectedCompId === c.id ? 'Vald' : 'Välj'}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {competitions.map(c => {
+              const status = getCompStatus(c);
+              return (
+                <Card key={c.id} className={status === 'ended' ? 'opacity-70' : ''}>
+                  <CardContent className="flex items-center justify-between py-4 gap-3">
+                    <div className="min-w-0">
+                      <p className="font-semibold truncate">{c.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Start: {new Date(c.start_time).toLocaleString('sv-SE')} · {c.entry_diamonds || 0} 💎
+                        {c.end_time && ` · Avslutad: ${new Date(c.end_time).toLocaleDateString('sv-SE')}`}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                      <Badge variant={status === 'active' ? 'default' : status === 'ended' ? 'destructive' : 'secondary'}>
+                        {status === 'active' ? 'Aktiv' : status === 'ended' ? 'Avslutad' : 'Inaktiv'}
+                      </Badge>
+                      {status !== 'ended' && (
+                        <>
+                          <Button size="sm" variant="outline" onClick={() => toggleActive(c.id, c.is_active)}>
+                            {c.is_active ? 'Inaktivera' : 'Aktivera'}
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => endCompetition(c.id)} className="text-destructive border-destructive">
+                            <Flag className="h-4 w-4 mr-1" /> Avsluta
+                          </Button>
+                        </>
+                      )}
+                      <Button size="sm" variant={selectedCompId === c.id ? 'default' : 'outline'} onClick={() => { setSelectedCompId(c.id); setActiveTab('challenges'); }}>
+                        {selectedCompId === c.id ? 'Vald' : 'Välj'}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </TabsContent>
 
@@ -353,6 +427,29 @@ export default function AdminPage() {
               ))}
             </div>
           )}
+        </TabsContent>
+
+        {/* ADMINS TAB */}
+        <TabsContent value="admins">
+          <Card>
+            <CardHeader><CardTitle>Lägg till admin</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Ange användarnamnet på den person du vill göra till admin. De får omedelbart adminbehörighet.
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  value={newAdminUsername}
+                  onChange={e => setNewAdminUsername(e.target.value)}
+                  placeholder="Användarnamn"
+                  onKeyDown={e => e.key === 'Enter' && addAdmin()}
+                />
+                <Button onClick={addAdmin} disabled={addingAdmin} className="gradient-gold text-accent-foreground font-semibold shrink-0">
+                  {addingAdmin ? <Loader2 className="h-4 w-4 animate-spin" /> : <><UserPlus className="h-4 w-4 mr-1" /> Lägg till</>}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
