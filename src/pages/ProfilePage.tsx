@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useDiamonds } from '@/hooks/useDiamonds';
+import { useStreak } from '@/hooks/useStreak';
+import { useAppSettings } from '@/hooks/useAppSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +11,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DiamondBalance } from '@/components/DiamondBalance';
 import { ShareButton } from '@/components/ShareButton';
+import { DailyClaimButton } from '@/components/DailyClaimButton';
+import { StreakDisplay } from '@/components/StreakDisplay';
+import { RankBadge } from '@/components/RankBadge';
 import { Camera, Save, Trophy, Loader2, Diamond, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -17,6 +22,8 @@ export default function ProfilePage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { diamonds, dailyAds, watchAd } = useDiamonds();
+  const { streakCount } = useStreak();
+  const { getRank } = useAppSettings();
   const fileRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState<any>(null);
   const [username, setUsername] = useState('');
@@ -34,7 +41,7 @@ export default function ProfilePage() {
 
   const fetchProfile = async () => {
     if (!user) return;
-    const { data } = await supabase.from('profiles').select('*').eq('user_id', user.id).maybeSingle();
+    const { data } = await (supabase.from('profiles') as any).select('*').eq('user_id', user.id).maybeSingle();
     if (data) { setProfile(data); setUsername(data.username); setAvatarUrl(data.avatar_url); }
   };
 
@@ -52,10 +59,7 @@ export default function ProfilePage() {
   const fetchHistory = async () => {
     if (!user) return;
     const { data } = await (supabase.from('diamond_history') as any)
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(20);
+      .select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20);
     setHistory(data || []);
   };
 
@@ -81,7 +85,7 @@ export default function ProfilePage() {
 
   if (!user) return null;
 
-  if (!user) return null;
+  const rank = getRank(stats.points);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
@@ -89,7 +93,7 @@ export default function ProfilePage() {
 
       <Card className="mb-6">
         <CardContent className="pt-6">
-          <div className="flex items-center gap-6 mb-6">
+          <div className="flex items-center gap-6 mb-4">
             <div className="relative">
               <Avatar className="h-20 w-20">
                 <AvatarImage src={avatarUrl || undefined} />
@@ -104,6 +108,10 @@ export default function ProfilePage() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">{user.email}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <RankBadge points={stats.points} />
+                <StreakDisplay count={streakCount} />
+              </div>
             </div>
           </div>
 
@@ -120,7 +128,15 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
-      {/* Diamonds section */}
+      {/* Daily Claim */}
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <h2 className="text-xl font-display font-bold mb-4">Daglig bonus</h2>
+          <DailyClaimButton />
+        </CardContent>
+      </Card>
+
+      {/* Diamonds */}
       <Card className="mb-6">
         <CardContent className="pt-6">
           <h2 className="text-xl font-display font-bold mb-4 flex items-center gap-2">

@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       challenges: {
         Row: {
           competition_id: string
@@ -60,18 +84,21 @@ export type Database = {
           competition_id: string
           id: string
           joined_at: string
+          team_id: string | null
           user_id: string
         }
         Insert: {
           competition_id: string
           id?: string
           joined_at?: string
+          team_id?: string | null
           user_id: string
         }
         Update: {
           competition_id?: string
           id?: string
           joined_at?: string
+          team_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -80,6 +107,13 @@ export type Database = {
             columns: ["competition_id"]
             isOneToOne: false
             referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competition_memberships_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -149,6 +183,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          all_time_points: number
           avatar_url: string | null
           created_at: string
           daily_ad_views: number
@@ -156,14 +191,17 @@ export type Database = {
           diamonds: number
           id: string
           last_ad_date: string | null
+          last_claim_date: string | null
           last_share_date: string | null
           rules_accepted: boolean
           rules_accepted_at: string | null
+          streak_count: number
           updated_at: string
           user_id: string
           username: string
         }
         Insert: {
+          all_time_points?: number
           avatar_url?: string | null
           created_at?: string
           daily_ad_views?: number
@@ -171,14 +209,17 @@ export type Database = {
           diamonds?: number
           id?: string
           last_ad_date?: string | null
+          last_claim_date?: string | null
           last_share_date?: string | null
           rules_accepted?: boolean
           rules_accepted_at?: string | null
+          streak_count?: number
           updated_at?: string
           user_id: string
           username: string
         }
         Update: {
+          all_time_points?: number
           avatar_url?: string | null
           created_at?: string
           daily_ad_views?: number
@@ -186,9 +227,11 @@ export type Database = {
           diamonds?: number
           id?: string
           last_ad_date?: string | null
+          last_claim_date?: string | null
           last_share_date?: string | null
           rules_accepted?: boolean
           rules_accepted_at?: string | null
+          streak_count?: number
           updated_at?: string
           user_id?: string
           username?: string
@@ -247,6 +290,103 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      team_invitations: {
+        Row: {
+          created_at: string
+          id: string
+          invited_by: string
+          invited_user_id: string
+          status: string
+          team_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invited_by: string
+          invited_user_id: string
+          status?: string
+          team_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invited_by?: string
+          invited_user_id?: string
+          status?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_invitations_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_members: {
+        Row: {
+          id: string
+          joined_at: string
+          role: string
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          role?: string
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          role?: string
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
