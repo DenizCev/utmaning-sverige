@@ -5,11 +5,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { Navbar } from "@/components/Navbar";
-import Index from "./pages/Index";
-import AuthPage from "./pages/AuthPage";
 import Dashboard from "./pages/Dashboard";
+import AuthPage from "./pages/AuthPage";
 import ChallengePage from "./pages/ChallengePage";
-import LeaderboardPage from "./pages/LeaderboardPage";
+import CompetitionsPage from "./pages/CompetitionsPage";
+import CompetitionLeaderboardPage from "./pages/CompetitionLeaderboardPage";
+import AllTimeLeaderboardPage from "./pages/AllTimeLeaderboardPage";
 import ProfilePage from "./pages/ProfilePage";
 import AdminPage from "./pages/AdminPage";
 import RulesPage from "./pages/RulesPage";
@@ -29,7 +30,10 @@ const App = () => (
             <Route path="/" element={<Dashboard />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/utmaning/:id" element={<ChallengePage />} />
-            <Route path="/leaderboard" element={<LeaderboardPage />} />
+            <Route path="/tavlingar" element={<CompetitionsPage />} />
+            <Route path="/leaderboard/:competitionId" element={<CompetitionLeaderboardPage />} />
+            <Route path="/leaderboard" element={<CompetitionLeaderboardPage />} />
+            <Route path="/leaderboard-alltime" element={<AllTimeLeaderboardPage />} />
             <Route path="/profil" element={<ProfilePage />} />
             <Route path="/regler" element={<RulesPage />} />
             <Route path="/admin" element={<AdminPage />} />

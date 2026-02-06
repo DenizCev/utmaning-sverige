@@ -89,6 +89,7 @@ export type Database = {
           created_at: string
           description: string | null
           end_time: string | null
+          entry_diamonds: number
           id: string
           is_active: boolean
           name: string
@@ -100,6 +101,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           end_time?: string | null
+          entry_diamonds?: number
           id?: string
           is_active?: boolean
           name: string
@@ -111,6 +113,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           end_time?: string | null
+          entry_diamonds?: number
           id?: string
           is_active?: boolean
           name?: string

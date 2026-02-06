@@ -8,14 +8,15 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DiamondBalance } from '@/components/DiamondBalance';
-import { Camera, Save, Trophy, Loader2, Diamond, Eye, Share2 } from 'lucide-react';
+import { ShareButton } from '@/components/ShareButton';
+import { Camera, Save, Trophy, Loader2, Diamond, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
 export default function ProfilePage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { diamonds, dailyAds, dailyShares, watchAd, shareDiamond } = useDiamonds();
+  const { diamonds, dailyAds, watchAd } = useDiamonds();
   const fileRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState<any>(null);
   const [username, setUsername] = useState('');
@@ -78,17 +79,7 @@ export default function ProfilePage() {
     setSaving(false);
   };
 
-  const handleShare = async () => {
-    const url = window.location.origin;
-    const text = `Kolla in Sweden Challenge Race! 🏆🇸🇪`;
-    if (navigator.share) {
-      try { await navigator.share({ title: 'Sweden Challenge Race', text, url }); await shareDiamond(); } catch {}
-    } else {
-      await navigator.clipboard.writeText(`${text} ${url}`);
-      await shareDiamond();
-      toast.success('Länk kopierad!');
-    }
-  };
+  if (!user) return null;
 
   if (!user) return null;
 
@@ -142,9 +133,7 @@ export default function ProfilePage() {
             <Button size="sm" variant="outline" onClick={watchAd} disabled={dailyAds >= 10}>
               <Eye className="h-4 w-4 mr-1" /> Titta på annons ({dailyAds}/10)
             </Button>
-            <Button size="sm" variant="outline" onClick={handleShare} disabled={dailyShares >= 5}>
-              <Share2 className="h-4 w-4 mr-1" /> Dela ({dailyShares}/5)
-            </Button>
+            <ShareButton text="Kolla in Sweden Challenge Race! 🏆🇸🇪" />
           </div>
           {history.length > 0 && (
             <div>

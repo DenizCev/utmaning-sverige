@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { ShareButton } from '@/components/ShareButton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -114,12 +115,15 @@ export default function ChallengePage() {
         </CardHeader>
         <CardContent>
           {existingSubmission ? (
-            <div className="text-center py-8">
+            <div className="text-center py-8 space-y-4">
               <Badge className={existingSubmission.status === 'approved' ? 'bg-success text-success-foreground' : existingSubmission.status === 'rejected' ? 'bg-destructive text-destructive-foreground' : 'bg-muted text-muted-foreground'}>
                 {existingSubmission.status === 'pending' && '⏳ Väntar på granskning'}
                 {existingSubmission.status === 'approved' && '✅ Godkänd!'}
                 {existingSubmission.status === 'rejected' && '❌ Avvisad – försök igen'}
               </Badge>
+              <div>
+                <ShareButton text={`Jag klarade utmaningen "${challenge.title}" i Sweden Challenge Race! 🏆`} showDiamondInfo />
+              </div>
             </div>
           ) : (
             <div className="space-y-6">

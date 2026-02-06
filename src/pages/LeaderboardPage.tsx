@@ -1,163 +1,42 @@
 import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Trophy, Medal, Gift } from 'lucide-react';
+import CompetitionLeaderboardPage from './CompetitionLeaderboardPage';
 
-interface LeaderboardEntry {
-  user_id: string;
-  username: string;
-  avatar_url: string | null;
-  total_points: number;
-  completed_challenges: number;
-}
-
-interface Prizes {
-  first?: string;
-  second?: string;
-  third?: string;
-  other?: string;
-}
-
+// This page handles /leaderboard without a competition ID by finding the latest competition
 export default function LeaderboardPage() {
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
-  const [prizes, setPrizes] = useState<Prizes>({});
-  const [loading, setLoading] = useState(true);
+  const { competitionId } = useParams<{ competitionId?: string }>();
+  const [resolvedId, setResolvedId] = useState<string | undefined>(competitionId);
 
   useEffect(() => {
-    fetchLeaderboard();
-    const channel = supabase
-      .channel('leaderboard-updates')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'submissions' }, () => {
-        fetchLeaderboard();
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, []);
-
-  const fetchLeaderboard = async () => {
-    const { data: comp } = await (supabase.from('competitions') as any)
-      .select('id, prizes')
-      .order('start_time', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (!comp) { setLoading(false); return; }
-    setPrizes((comp.prizes as Prizes) || {});
-
-    const { data: challenges } = await supabase
-      .from('challenges')
-      .select('id, points')
-      .eq('competition_id', comp.id);
-
-    if (!challenges || challenges.length === 0) { setLoading(false); return; }
-
-    const challengeIds = challenges.map(c => c.id);
-    const pointsMap = Object.fromEntries(challenges.map(c => [c.id, c.points]));
-
-    const { data: subs } = await supabase
-      .from('submissions')
-      .select('user_id, challenge_id, status, points_awarded')
-      .eq('status', 'approved')
-      .in('challenge_id', challengeIds);
-
-    if (!subs) { setLoading(false); return; }
-
-    const userMap: Record<string, { total_points: number; completed: number }> = {};
-    for (const s of subs) {
-      if (!userMap[s.user_id]) userMap[s.user_id] = { total_points: 0, completed: 0 };
-      userMap[s.user_id].total_points += (s.points_awarded || pointsMap[s.challenge_id] || 0);
-      userMap[s.user_id].completed++;
+    if (!competitionId) {
+      // Find the latest active competition
+      (supabase.from('competitions') as any)
+        .select('id')
+        .eq('is_active', true)
+        .order('start_time', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+        .then(({ data }: any) => {
+          if (data) setResolvedId(data.id);
+          else {
+            // Fallback to any latest competition
+            (supabase.from('competitions') as any)
+              .select('id')
+              .order('start_time', { ascending: false })
+              .limit(1)
+              .maybeSingle()
+              .then(({ data: fallback }: any) => {
+                if (fallback) setResolvedId(fallback.id);
+              });
+          }
+        });
     }
+  }, [competitionId]);
 
-    const userIds = Object.keys(userMap);
-    if (userIds.length === 0) { setEntries([]); setLoading(false); return; }
+  if (!resolvedId) {
+    return <div className="min-h-[60vh] flex items-center justify-center text-muted-foreground">Laddar...</div>;
+  }
 
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('user_id, username, avatar_url')
-      .in('user_id', userIds);
-
-    const profileMap = Object.fromEntries((profiles || []).map(p => [p.user_id, p]));
-
-    const result: LeaderboardEntry[] = userIds
-      .map(uid => ({
-        user_id: uid,
-        username: profileMap[uid]?.username || 'Okänd',
-        avatar_url: profileMap[uid]?.avatar_url || null,
-        total_points: userMap[uid].total_points,
-        completed_challenges: userMap[uid].completed,
-      }))
-      .sort((a, b) => b.total_points - a.total_points || b.completed_challenges - a.completed_challenges);
-
-    setEntries(result);
-    setLoading(false);
-  };
-
-  const getRankStyle = (rank: number) => {
-    if (rank === 0) return 'text-sweden-gold';
-    if (rank === 1) return 'text-muted-foreground';
-    if (rank === 2) return 'text-orange-600';
-    return '';
-  };
-
-  const hasPrizes = prizes.first || prizes.second || prizes.third;
-
-  return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <div className="text-center mb-8">
-        <Trophy className="h-10 w-10 text-sweden-gold mx-auto mb-2" />
-        <h1 className="text-3xl font-display font-bold">Leaderboard</h1>
-        <p className="text-muted-foreground">Realtidsranking för aktuell tävling</p>
-      </div>
-
-      {hasPrizes && (
-        <Card className="mb-6 border-sweden-gold/30">
-          <CardContent className="pt-4">
-            <h3 className="font-display font-bold flex items-center gap-2 mb-3">
-              <Gift className="h-5 w-5 text-sweden-gold" /> Priser i denna tävling
-            </h3>
-            <div className="space-y-1 text-sm">
-              {prizes.first && <p><span className="font-semibold text-sweden-gold">🥇 1:a plats:</span> {prizes.first}</p>}
-              {prizes.second && <p><span className="font-semibold text-muted-foreground">🥈 2:a plats:</span> {prizes.second}</p>}
-              {prizes.third && <p><span className="font-semibold text-orange-600">🥉 3:e plats:</span> {prizes.third}</p>}
-              {prizes.other && <p className="text-muted-foreground">{prizes.other}</p>}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {loading ? (
-        <div className="text-center py-16 text-muted-foreground">Laddar...</div>
-      ) : entries.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">Inga godkända utmaningar ännu. Bli först!</div>
-      ) : (
-        <div className="space-y-3">
-          {entries.map((entry, idx) => (
-            <Card key={entry.user_id} className={idx < 3 ? 'ring-1 ring-sweden-gold/30' : ''}>
-              <CardContent className="flex items-center gap-4 py-3">
-                <div className={`text-2xl font-display font-bold w-10 text-center ${getRankStyle(idx)}`}>
-                  {idx < 3 ? <Medal className="h-6 w-6 mx-auto" /> : idx + 1}
-                </div>
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={entry.avatar_url || undefined} />
-                  <AvatarFallback className="gradient-sweden text-primary-foreground text-sm">
-                    {entry.username.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold truncate">{entry.username}</p>
-                  <p className="text-xs text-muted-foreground">{entry.completed_challenges} utmaningar klara</p>
-                </div>
-                <Badge className="gradient-gold text-accent-foreground border-0 font-bold">
-                  {entry.total_points}p
-                </Badge>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+  return <CompetitionLeaderboardPage />;
 }
