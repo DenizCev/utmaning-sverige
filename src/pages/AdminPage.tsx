@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Shield, Plus, Trash2, CheckCircle, XCircle, Eye, Loader2, UserPlus, Flag } from 'lucide-react';
+import { AdminParticipants } from '@/components/AdminParticipants';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
@@ -230,6 +231,7 @@ export default function AdminPage() {
         <TabsList className="mb-6 flex-wrap">
           <TabsTrigger value="competitions">Tävlingar</TabsTrigger>
           <TabsTrigger value="challenges">Utmaningar {selectedCompId && `(${competitions.find(c => c.id === selectedCompId)?.name || ''})`}</TabsTrigger>
+          <TabsTrigger value="participants">Deltagare</TabsTrigger>
           <TabsTrigger value="submissions">Inlämningar</TabsTrigger>
           <TabsTrigger value="admins">Admins</TabsTrigger>
         </TabsList>
@@ -373,6 +375,11 @@ export default function AdminPage() {
           ) : (
             <p className="text-muted-foreground">Välj en tävling i fliken "Tävlingar" först.</p>
           )}
+        </TabsContent>
+
+        {/* PARTICIPANTS TAB */}
+        <TabsContent value="participants">
+          <AdminParticipants competitionId={selectedCompId} />
         </TabsContent>
 
         {/* SUBMISSIONS TAB */}
