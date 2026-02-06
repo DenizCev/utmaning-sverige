@@ -9,9 +9,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Plus, Trash2, CheckCircle, XCircle, Eye, Loader2, UserPlus, Flag, Palette } from 'lucide-react';
+import { Shield, Plus, Trash2, CheckCircle, XCircle, Eye, Loader2, UserPlus, Flag, Palette, Users as UsersIcon } from 'lucide-react';
 import { AdminParticipants } from '@/components/AdminParticipants';
 import { AdminBranding } from '@/components/AdminBranding';
+import { AdminUsers } from '@/components/AdminUsers';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
@@ -234,6 +235,7 @@ export default function AdminPage() {
           <TabsTrigger value="challenges">Utmaningar {selectedCompId && `(${competitions.find(c => c.id === selectedCompId)?.name || ''})`}</TabsTrigger>
           <TabsTrigger value="participants">Deltagare</TabsTrigger>
           <TabsTrigger value="submissions">Inlämningar</TabsTrigger>
+          <TabsTrigger value="users"><UsersIcon className="h-4 w-4 mr-1" /> Alla användare</TabsTrigger>
           <TabsTrigger value="admins">Admins</TabsTrigger>
           <TabsTrigger value="settings"><Palette className="h-4 w-4 mr-1" /> Inställningar</TabsTrigger>
         </TabsList>
@@ -436,6 +438,11 @@ export default function AdminPage() {
               ))}
             </div>
           )}
+        </TabsContent>
+
+        {/* ALL USERS TAB */}
+        <TabsContent value="users">
+          <AdminUsers />
         </TabsContent>
 
         {/* ADMINS TAB */}

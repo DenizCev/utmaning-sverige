@@ -53,8 +53,7 @@ export function useAppSettings() {
 
   const updateSetting = async (key: string, value: any) => {
     const { error } = await (supabase.from('app_settings') as any)
-      .update({ value })
-      .eq('key', key);
+      .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
     if (!error) await fetchSettings();
     return !error;
   };

@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { ShareButton } from '@/components/ShareButton';
 import { UserSearch } from '@/components/UserSearch';
 import { Card, CardContent } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { CharacterAvatar } from '@/components/CharacterAvatar';
 import { Badge } from '@/components/ui/badge';
 import { Trophy, Medal, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -13,6 +13,7 @@ interface AllTimeEntry {
   user_id: string;
   username: string;
   avatar_url: string | null;
+  equipped_skin: string | null;
   total_points: number;
   competitions_joined: number;
   challenges_completed: number;
@@ -67,7 +68,7 @@ export default function AllTimeLeaderboardPage() {
     // Get profiles
     const { data: profiles } = await supabase
       .from('profiles')
-      .select('user_id, username, avatar_url')
+      .select('user_id, username, avatar_url, equipped_skin')
       .in('user_id', userIds);
 
     const profileMap = Object.fromEntries((profiles || []).map(p => [p.user_id, p]));
@@ -77,6 +78,7 @@ export default function AllTimeLeaderboardPage() {
         user_id: uid,
         username: profileMap[uid]?.username || 'Okänd',
         avatar_url: profileMap[uid]?.avatar_url || null,
+        equipped_skin: profileMap[uid]?.equipped_skin || null,
         total_points: userMap[uid].total_points,
         competitions_joined: compCounts[uid]?.size || 0,
         challenges_completed: userMap[uid].challenges.size,
@@ -131,12 +133,12 @@ export default function AllTimeLeaderboardPage() {
                 <div className={`text-2xl font-display font-bold w-10 text-center ${getRankStyle(idx)}`}>
                   {idx < 3 ? <Medal className="h-6 w-6 mx-auto" /> : idx + 1}
                 </div>
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={entry.avatar_url || undefined} />
-                  <AvatarFallback className="gradient-sweden text-primary-foreground text-sm">
-                    {entry.username.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+                <CharacterAvatar
+                  username={entry.username}
+                  avatarUrl={entry.avatar_url}
+                  equippedSkin={entry.equipped_skin}
+                  size="md"
+                />
                 <div className="flex-1 min-w-0">
                   <Link to={`/profil/${entry.user_id}`} className="hover:underline">
                     <p className="font-semibold truncate">{entry.username} {user && entry.user_id === user.id && '(du)'}</p>
