@@ -55,6 +55,7 @@ export function useAppSettings() {
     const { error } = await (supabase.from('app_settings') as any)
       .update({ value })
       .eq('key', key);
+    if (!error) await fetchSettings();
     return !error;
   };
 
