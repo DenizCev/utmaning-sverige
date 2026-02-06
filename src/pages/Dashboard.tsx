@@ -7,6 +7,7 @@ import { CountdownTimer } from '@/components/CountdownTimer';
 import { DiamondBalance } from '@/components/DiamondBalance';
 import { ShareButton } from '@/components/ShareButton';
 import { DailyClaimButton } from '@/components/DailyClaimButton';
+import { RewardedAdDialog } from '@/components/RewardedAdDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -47,7 +48,7 @@ export default function Dashboard() {
   const [currentChallengeIndex, setCurrentChallengeIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [competitionStarted, setCompetitionStarted] = useState(false);
-
+  const [adDialogOpen, setAdDialogOpen] = useState(false);
   useEffect(() => { fetchCompetition(); }, [user]);
 
   const fetchCompetition = async () => {
@@ -258,12 +259,17 @@ export default function Dashboard() {
       {user && !hasJoined && (
         <div className="glass-card rounded-xl p-4 mb-10 flex flex-col sm:flex-row items-center justify-center gap-3">
           <p className="text-sm text-muted-foreground">Tjäna diamanter:</p>
-          <Button size="sm" variant="outline" onClick={watchAd} disabled={dailyAds >= 10}>
+          <Button size="sm" variant="outline" onClick={() => setAdDialogOpen(true)} disabled={dailyAds >= 10}>
             <Eye className="h-4 w-4 mr-1" /> Annons ({dailyAds}/10)
           </Button>
           <ShareButton text={`Tävla i ${competition.name}! 🏆🇸🇪`} />
         </div>
       )}
+      <RewardedAdDialog
+        open={adDialogOpen}
+        onClose={() => setAdDialogOpen(false)}
+        onComplete={async () => { await watchAd(); setAdDialogOpen(false); }}
+      />
 
       {/* Quick links */}
       <div className="flex justify-center gap-3 mb-8">
