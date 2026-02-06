@@ -17,6 +17,9 @@ export default function AdminPage() {
   const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
 
+  // Tab state
+  const [activeTab, setActiveTab] = useState('competitions');
+
   // Competition state
   const [compName, setCompName] = useState('');
   const [compDesc, setCompDesc] = useState('');
@@ -158,10 +161,10 @@ export default function AdminPage() {
         <h1 className="text-3xl font-display font-bold">Admin-panel</h1>
       </div>
 
-      <Tabs defaultValue="competitions">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-6">
           <TabsTrigger value="competitions">Tävlingar</TabsTrigger>
-          <TabsTrigger value="challenges">Utmaningar</TabsTrigger>
+          <TabsTrigger value="challenges">Utmaningar {selectedCompId && `(${competitions.find(c => c.id === selectedCompId)?.name || ''})`}</TabsTrigger>
           <TabsTrigger value="submissions">Inlämningar</TabsTrigger>
         </TabsList>
 
@@ -205,7 +208,9 @@ export default function AdminPage() {
                     <Button size="sm" variant="outline" onClick={() => toggleActive(c.id, c.is_active)}>
                       {c.is_active ? 'Inaktivera' : 'Aktivera'}
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => setSelectedCompId(c.id)}>Välj</Button>
+                    <Button size="sm" variant={selectedCompId === c.id ? 'default' : 'outline'} onClick={() => { setSelectedCompId(c.id); setActiveTab('challenges'); }}>
+                      {selectedCompId === c.id ? 'Vald' : 'Välj'}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
