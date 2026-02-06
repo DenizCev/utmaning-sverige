@@ -7,6 +7,7 @@ import { CountdownTimer } from '@/components/CountdownTimer';
 import { DiamondBalance } from '@/components/DiamondBalance';
 import { ShareButton } from '@/components/ShareButton';
 import { CompetitionJoinButton } from '@/components/CompetitionJoinButton';
+import { RewardedAdDialog } from '@/components/RewardedAdDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -38,6 +39,7 @@ export default function CompetitionsPage() {
   const [joinedComps, setJoinedComps] = useState<Set<string>>(new Set());
   const [progressMap, setProgressMap] = useState<Record<string, { done: number; total: number }>>({});
   const [loading, setLoading] = useState(true);
+  const [adDialogOpen, setAdDialogOpen] = useState(false);
 
   useEffect(() => { fetchAll(); }, [user]);
 
@@ -246,10 +248,11 @@ export default function CompetitionsPage() {
       {user && (
         <div className="flex items-center justify-center gap-4 mb-6">
           <DiamondBalance count={diamonds} />
-          <Button size="sm" variant="outline" onClick={watchAd} disabled={dailyAds >= 10}>
+          <Button size="sm" variant="outline" onClick={() => setAdDialogOpen(true)} disabled={dailyAds >= 10}>
             <Eye className="h-4 w-4 mr-1" /> Annons ({dailyAds}/10)
           </Button>
           <ShareButton />
+          <RewardedAdDialog open={adDialogOpen} onClose={() => setAdDialogOpen(false)} onComplete={async () => { await watchAd(); setAdDialogOpen(false); }} />
         </div>
       )}
 

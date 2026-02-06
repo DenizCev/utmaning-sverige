@@ -15,6 +15,7 @@ import { DailyClaimButton } from '@/components/DailyClaimButton';
 import { StreakDisplay } from '@/components/StreakDisplay';
 import { RankBadge } from '@/components/RankBadge';
 import { SkinShop } from '@/components/SkinShop';
+import { RewardedAdDialog } from '@/components/RewardedAdDialog';
 import { Camera, Save, Trophy, Loader2, Diamond, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -32,6 +33,7 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [stats, setStats] = useState({ competitions: 0, challenges: 0, points: 0 });
   const [history, setHistory] = useState<any[]>([]);
+  const [adDialogOpen, setAdDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!user) { navigate('/auth'); return; }
@@ -151,11 +153,12 @@ export default function ProfilePage() {
             <DiamondBalance count={diamonds} />
           </div>
           <div className="flex flex-wrap gap-2 mb-4">
-            <Button size="sm" variant="outline" onClick={watchAd} disabled={dailyAds >= 10}>
+            <Button size="sm" variant="outline" onClick={() => setAdDialogOpen(true)} disabled={dailyAds >= 10}>
               <Eye className="h-4 w-4 mr-1" /> Titta på annons ({dailyAds}/10)
             </Button>
             <ShareButton text="Kolla in Sweden Challenge Race! 🏆🇸🇪" />
           </div>
+          <RewardedAdDialog open={adDialogOpen} onClose={() => setAdDialogOpen(false)} onComplete={async () => { await watchAd(); setAdDialogOpen(false); }} />
           {history.length > 0 && (
             <div>
               <p className="text-sm font-semibold mb-2">Historik</p>
