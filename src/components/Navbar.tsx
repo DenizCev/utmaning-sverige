@@ -1,11 +1,13 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useAppSettings } from '@/hooks/useAppSettings';
 import { Button } from '@/components/ui/button';
 import { Trophy, User, Shield, LogOut, Menu, X, Users, Search } from 'lucide-react';
 import { useState } from 'react';
 
 export function Navbar() {
   const { user, isAdmin, signOut } = useAuth();
+  const { branding } = useAppSettings();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -18,8 +20,12 @@ export function Navbar() {
     <nav className="sticky top-0 z-50 gradient-sweden border-b border-sweden-blue-light/20">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 text-primary-foreground">
-          <Trophy className="h-6 w-6 text-sweden-gold" />
-          <span className="font-display text-lg font-bold tracking-tight">Sweden Challenge</span>
+          {branding.logo_url ? (
+            <img src={branding.logo_url} alt={branding.name} className="h-8 w-auto rounded" />
+          ) : (
+            <Trophy className="h-6 w-6 text-sweden-gold" />
+          )}
+          <span className="font-display text-lg font-bold tracking-tight">{branding.name || 'Sweden Challenge'}</span>
         </Link>
 
         {/* Desktop */}
