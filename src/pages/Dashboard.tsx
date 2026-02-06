@@ -45,12 +45,24 @@ export default function Dashboard() {
   const fetchCompetition = async () => {
     setLoading(true);
     // Get the latest competition (active or upcoming)
-    const { data: comp } = await supabase
+    // Prefer active competition, fallback to latest
+    let { data: comp } = await supabase
       .from('competitions')
       .select('*')
+      .eq('is_active', true)
       .order('start_time', { ascending: false })
       .limit(1)
       .maybeSingle();
+    
+    if (!comp) {
+      const { data: upcoming } = await supabase
+        .from('competitions')
+        .select('*')
+        .order('start_time', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      comp = upcoming;
+    }
 
     if (comp) {
       setCompetition(comp);
@@ -176,10 +188,16 @@ export default function Dashboard() {
       </div>
 
       {/* Countdown */}
-      {!competitionStarted && (
+      {!competitionStarted && competition.is_active && (
         <div className="mb-10">
           <p className="text-center text-sm text-muted-foreground mb-4 uppercase tracking-wider font-medium">Tävlingen startar om</p>
           <CountdownTimer targetDate={new Date(competition.start_time)} onComplete={() => setCompetitionStarted(true)} />
+        </div>
+      )}
+
+      {!competition.is_active && (
+        <div className="text-center mb-10 glass-card rounded-xl p-6">
+          <p className="text-muted-foreground">Denna tävling är inaktiverad.</p>
         </div>
       )}
 
