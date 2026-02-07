@@ -115,7 +115,7 @@ export function UserSearch() {
             {teams.length > 0 ? (
               <div className="space-y-1 max-h-60 overflow-y-auto">
                 {teams.map(t => (
-                  <div key={t.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                  <Link key={t.id} to={`/lag/${t.id}`} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={t.avatar_url || undefined} />
                       <AvatarFallback className="text-xs gradient-sweden text-primary-foreground">{t.name.slice(0, 2).toUpperCase()}</AvatarFallback>
@@ -127,7 +127,7 @@ export function UserSearch() {
                     <Badge variant="outline" className="text-xs shrink-0">
                       <Users className="h-3 w-3 mr-1" /> {t.member_count}
                     </Badge>
-                  </div>
+                  </Link>
                 ))}
               </div>
             ) : !searching ? (

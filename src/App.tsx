@@ -19,6 +19,7 @@ import AdminPage from "./pages/AdminPage";
 import RulesPage from "./pages/RulesPage";
 import StepsPage from "./pages/StepsPage";
 import NotificationsPage from "./pages/NotificationsPage";
+import TeamProfilePage from "./pages/TeamProfilePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/regler" element={<RulesPage />} />
             <Route path="/steg" element={<StepsPage />} />
             <Route path="/notiser" element={<NotificationsPage />} />
+            <Route path="/lag/:teamId" element={<TeamProfilePage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
