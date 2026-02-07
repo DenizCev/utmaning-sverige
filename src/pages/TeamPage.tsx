@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Users, Plus, UserPlus, Crown, LogOut, Check, X, Mail, Loader2 } from 'lucide-react';
+import { Users, Plus, UserPlus, Crown, LogOut, Check, X, Mail, Loader2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useRef } from 'react';
@@ -18,7 +18,7 @@ import { useRef } from 'react';
 export default function TeamPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { myTeams, invitations, loading, createTeam, inviteMember, respondToInvitation, getTeamMembers, leaveTeam } = useTeams();
+  const { myTeams, invitations, loading, createTeam, inviteMember, respondToInvitation, getTeamMembers, leaveTeam, removeMember } = useTeams();
   const [createOpen, setCreateOpen] = useState(false);
   const [teamName, setTeamName] = useState('');
   const [teamDesc, setTeamDesc] = useState('');
@@ -174,8 +174,22 @@ export default function TeamPage() {
                             <AvatarImage src={m.avatar_url || undefined} />
                             <AvatarFallback>{m.username?.slice(0, 2).toUpperCase()}</AvatarFallback>
                           </Avatar>
-                          <span className="text-sm">{m.username}</span>
+                          <span className="text-sm flex-1">{m.username}</span>
                           {m.role === 'leader' && <Badge variant="secondary" className="text-xs"><Crown className="h-3 w-3 mr-1" /> Ledare</Badge>}
+                          {team.created_by === user.id && m.user_id !== user.id && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                              onClick={async () => {
+                                await removeMember(team.id, m.user_id);
+                                const updated = await getTeamMembers(team.id);
+                                setMembers(updated);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       ))}
                     </div>
