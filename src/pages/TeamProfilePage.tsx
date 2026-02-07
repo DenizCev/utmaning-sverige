@@ -135,12 +135,16 @@ export default function TeamProfilePage() {
       toast.success('Förfrågan skickad! Lagledaren måste godkänna dig. 📩');
       setHasPendingRequest(true);
 
+      // Get requester username for notification
+      const { data: profile } = await supabase.from('profiles').select('username').eq('user_id', user.id).maybeSingle();
+      const username = profile?.username || 'En spelare';
+
       // Notify team leader
       await (supabase.from('notifications') as any).insert({
         user_id: team.created_by,
         type: 'team',
         title: '👥 Ny förfrågan att gå med i laget!',
-        message: `En spelare vill gå med i ${team.name}.`,
+        message: `${username} vill gå med i ${team.name}. Gå till dina lag för att godkänna eller neka.`,
         link: '/lag',
       });
     }
