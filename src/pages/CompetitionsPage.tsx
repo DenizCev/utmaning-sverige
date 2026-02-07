@@ -13,7 +13,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trophy, Users, Zap, ChevronRight, CheckCircle2, Lock, Diamond, Eye, Gift, Calendar, Clock } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Trophy, Users, Zap, ChevronRight, CheckCircle2, Lock, Diamond, Eye, Gift, Calendar, Clock, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -29,7 +30,7 @@ interface Competition {
 }
 
 export default function CompetitionsPage() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
   const { diamonds, dailyAds, rulesAccepted, watchAd, spendDiamonds } = useDiamonds();
   const { myTeams } = useTeams();
@@ -158,6 +159,23 @@ export default function CompetitionsPage() {
     }
   };
 
+  const handleDelete = async (compId: string) => {
+    // Delete related data first, then the competition
+    await supabase.from('submissions').delete().in(
+      'challenge_id',
+      (await supabase.from('challenges').select('id').eq('competition_id', compId)).data?.map(c => c.id) || []
+    );
+    await supabase.from('challenges').delete().eq('competition_id', compId);
+    await supabase.from('competition_memberships').delete().eq('competition_id', compId);
+    const { error } = await (supabase.from('competitions') as any).delete().eq('id', compId);
+    if (error) {
+      toast.error('Kunde inte ta bort tävlingen');
+    } else {
+      toast.success('Tävlingen har tagits bort! 🗑️');
+      fetchAll();
+    }
+  };
+
   const CompetitionCard = ({ comp, showJoin = true }: { comp: Competition; showJoin?: boolean }) => {
     const started = new Date(comp.start_time) <= new Date();
     const joined = joinedComps.has(comp.id);
@@ -239,6 +257,29 @@ export default function CompetitionsPage() {
               </Link>
             )}
             <ShareButton text={`Tävla i ${comp.name} på Sweden Challenge Race! 🏆🇸🇪`} size="sm" />
+            {isAdmin && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10">
+                    <Trash2 className="h-4 w-4 mr-1" /> Ta bort
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Ta bort tävling?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Är du säker på att du vill ta bort "{comp.name}"? All data (utmaningar, inlämningar, deltagare) kommer att raderas permanent.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => handleDelete(comp.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Ta bort permanent
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
         </CardContent>
       </Card>
