@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.reset-daily-steps]
 verify_jwt = false
+
+[functions.send-notifications]
+verify_jwt = false

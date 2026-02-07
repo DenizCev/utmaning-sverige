@@ -1,13 +1,16 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAppSettings } from '@/hooks/useAppSettings';
+import { useNotifications } from '@/hooks/useNotifications';
 import { Button } from '@/components/ui/button';
-import { Trophy, User, Shield, LogOut, Menu, X, Users, Search, Footprints } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Trophy, User, Shield, LogOut, Menu, X, Users, Search, Footprints, Bell } from 'lucide-react';
 import { useState } from 'react';
 
 export function Navbar() {
   const { user, isAdmin, signOut } = useAuth();
   const { branding } = useAppSettings();
+  const { unreadCount } = useNotifications();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -62,6 +65,16 @@ export function Navbar() {
                   <Search className="h-4 w-4 mr-1" /> Sök
                 </Button>
               </Link>
+              <Link to="/notiser" className="relative">
+                <Button variant="ghost" size="sm" className="text-primary-foreground hover:bg-sweden-blue-light/20">
+                  <Bell className="h-4 w-4 mr-1" /> Notiser
+                  {unreadCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] bg-destructive text-destructive-foreground">
+                      {unreadCount}
+                    </Badge>
+                  )}
+                </Button>
+              </Link>
               <Link to="/profil">
                 <Button variant="ghost" size="sm" className="text-primary-foreground hover:bg-sweden-blue-light/20">
                   <User className="h-4 w-4 mr-1" /> Profil
@@ -104,6 +117,9 @@ export function Navbar() {
               <Link to="/lag" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">Lag</Link>
               <Link to="/steg" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">👟 Stegräknare</Link>
               <Link to="/sok" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">🔍 Sök spelare</Link>
+              <Link to="/notiser" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2 flex items-center gap-2">
+                🔔 Notiser {unreadCount > 0 && <Badge className="bg-destructive text-destructive-foreground text-xs">{unreadCount}</Badge>}
+              </Link>
               <Link to="/profil" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">Profil</Link>
               {isAdmin && <Link to="/admin" onClick={() => setMobileOpen(false)} className="text-sweden-gold py-2">Admin-panel</Link>}
               <button onClick={() => { handleSignOut(); setMobileOpen(false); }} className="text-primary-foreground py-2 text-left">Logga ut</button>
