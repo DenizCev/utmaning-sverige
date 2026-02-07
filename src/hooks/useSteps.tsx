@@ -53,42 +53,11 @@ export function useSteps() {
     }
   }, [user, fetchToday, fetchHistory]);
 
-  // Auto-sync from health on native when page loads
   useEffect(() => {
     if (user && isNative) {
       syncFromHealth();
     }
   }, [user, isNative]);
-
-  const addSteps = async (count: number) => {
-    if (!user) return false;
-    if (todaySteps) {
-      const { error } = await (supabase.from('step_entries') as any)
-        .update({ step_count: todaySteps.step_count + count, updated_at: new Date().toISOString() })
-        .eq('id', todaySteps.id);
-      if (!error) { await fetchToday(); await fetchHistory(); return true; }
-    } else {
-      const { error } = await (supabase.from('step_entries') as any)
-        .insert({ user_id: user.id, step_count: count, date: today });
-      if (!error) { await fetchToday(); await fetchHistory(); return true; }
-    }
-    return false;
-  };
-
-  const setSteps = async (count: number) => {
-    if (!user) return false;
-    if (todaySteps) {
-      const { error } = await (supabase.from('step_entries') as any)
-        .update({ step_count: count, updated_at: new Date().toISOString() })
-        .eq('id', todaySteps.id);
-      if (!error) { await fetchToday(); await fetchHistory(); return true; }
-    } else {
-      const { error } = await (supabase.from('step_entries') as any)
-        .insert({ user_id: user.id, step_count: count, date: today });
-      if (!error) { await fetchToday(); await fetchHistory(); return true; }
-    }
-    return false;
-  };
 
   const syncFromHealth = async (): Promise<boolean> => {
     if (!user || !isNative) return false;
@@ -106,7 +75,6 @@ export function useSteps() {
         return false;
       }
 
-      // Use edge function for upsert
       const { error } = await supabase.functions.invoke('sync-steps', {
         body: { steps: result.steps, date: today },
       });
@@ -130,8 +98,6 @@ export function useSteps() {
     loading,
     syncing,
     isNative,
-    addSteps,
-    setSteps,
     syncFromHealth,
     refetch: () => { fetchToday(); fetchHistory(); },
   };
