@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { Button } from '@/components/ui/button';
-import { Trophy, User, Shield, LogOut, Menu, X, Users, Search } from 'lucide-react';
+import { Trophy, User, Shield, LogOut, Menu, X, Users, Search, Footprints } from 'lucide-react';
 import { useState } from 'react';
 
 export function Navbar() {
@@ -52,6 +52,11 @@ export function Navbar() {
                   <Users className="h-4 w-4 mr-1" /> Lag
                 </Button>
               </Link>
+              <Link to="/steg">
+                <Button variant="ghost" size="sm" className="text-primary-foreground hover:bg-sweden-blue-light/20">
+                  <Footprints className="h-4 w-4 mr-1" /> Steg
+                </Button>
+              </Link>
               <Link to="/sok">
                 <Button variant="ghost" size="sm" className="text-primary-foreground hover:bg-sweden-blue-light/20">
                   <Search className="h-4 w-4 mr-1" /> Sök
@@ -97,6 +102,7 @@ export function Navbar() {
               <Link to="/leaderboard-alltime" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">Leaderboard</Link>
               <Link to="/regler" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">Regler</Link>
               <Link to="/lag" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">Lag</Link>
+              <Link to="/steg" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">👟 Stegräknare</Link>
               <Link to="/sok" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">🔍 Sök spelare</Link>
               <Link to="/profil" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">Profil</Link>
               {isAdmin && <Link to="/admin" onClick={() => setMobileOpen(false)} className="text-sweden-gold py-2">Admin-panel</Link>}
