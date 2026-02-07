@@ -15,6 +15,7 @@ import { AdminBranding } from '@/components/AdminBranding';
 import { AdminUsers } from '@/components/AdminUsers';
 import { AdminTeams } from '@/components/AdminTeams';
 import { AdminRules } from '@/components/AdminRules';
+import { AdminAdmins } from '@/components/AdminAdmins';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
@@ -48,9 +49,6 @@ export default function AdminPage() {
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [subLoading, setSubLoading] = useState(false);
 
-  // Admin management state
-  const [newAdminUsername, setNewAdminUsername] = useState('');
-  const [addingAdmin, setAddingAdmin] = useState(false);
 
   const [saving, setSaving] = useState(false);
 
@@ -190,49 +188,6 @@ export default function AdminPage() {
     }
   };
 
-  const addAdmin = async () => {
-    if (!newAdminUsername.trim()) { toast.error('Ange ett användarnamn'); return; }
-    setAddingAdmin(true);
-
-    // Find user by username
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('user_id, username')
-      .eq('username', newAdminUsername.trim())
-      .maybeSingle();
-
-    if (!profile) {
-      toast.error(`Användare "${newAdminUsername}" hittades inte`);
-      setAddingAdmin(false);
-      return;
-    }
-
-    // Check if already admin
-    const { data: existingRole } = await supabase
-      .from('user_roles')
-      .select('id')
-      .eq('user_id', profile.user_id)
-      .eq('role', 'admin')
-      .maybeSingle();
-
-    if (existingRole) {
-      toast.info(`${profile.username} är redan admin`);
-      setAddingAdmin(false);
-      return;
-    }
-
-    const { error } = await supabase
-      .from('user_roles')
-      .insert({ user_id: profile.user_id, role: 'admin' });
-
-    if (error) {
-      toast.error('Kunde inte lägga till admin');
-    } else {
-      toast.success(`${profile.username} är nu admin! 🛡️`);
-      setNewAdminUsername('');
-    }
-    setAddingAdmin(false);
-  };
 
   if (!isAdmin) return null;
 
@@ -473,25 +428,7 @@ export default function AdminPage() {
         </TabsContent>
 
         <TabsContent value="admins">
-          <Card>
-            <CardHeader><CardTitle>Lägg till admin</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Ange användarnamnet på den person du vill göra till admin. De får omedelbart adminbehörighet.
-              </p>
-              <div className="flex gap-2">
-                <Input
-                  value={newAdminUsername}
-                  onChange={e => setNewAdminUsername(e.target.value)}
-                  placeholder="Användarnamn"
-                  onKeyDown={e => e.key === 'Enter' && addAdmin()}
-                />
-                <Button onClick={addAdmin} disabled={addingAdmin} className="gradient-gold text-accent-foreground font-semibold shrink-0">
-                  {addingAdmin ? <Loader2 className="h-4 w-4 animate-spin" /> : <><UserPlus className="h-4 w-4 mr-1" /> Lägg till</>}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <AdminAdmins user={user} />
         </TabsContent>
 
         {/* RULES TAB */}
