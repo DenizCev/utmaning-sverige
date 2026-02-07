@@ -143,6 +143,18 @@ export default function CompetitionsPage() {
       toast.success(teamId ? 'Laget är anmält! 🎉' : 'Du är anmäld! Lycka till! 🎉');
       setJoinedComps(prev => new Set([...prev, comp.id]));
       setMemberCounts(prev => ({ ...prev, [comp.id]: (prev[comp.id] || 0) + 1 }));
+
+      // Create in-app notification
+      const started = new Date(comp.start_time) <= new Date();
+      await (supabase.from('notifications') as any).insert({
+        user_id: user.id,
+        type: 'competition',
+        title: '🎉 Du är anmäld!',
+        message: started
+          ? `Du är nu med i ${comp.name}. Gå till utmaningarna och börja tävla!`
+          : `Du är anmäld till ${comp.name}. Tävlingen startar ${new Date(comp.start_time).toLocaleString('sv-SE')}.`,
+        link: started ? '/' : '/tavlingar',
+      });
     }
   };
 
