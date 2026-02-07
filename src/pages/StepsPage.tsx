@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Footprints, Plus, Trophy, Calendar, RotateCcw } from 'lucide-react';
+import { Footprints, Plus, Trophy, Calendar, RotateCcw, RefreshCw, Smartphone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { CharacterAvatar } from '@/components/CharacterAvatar';
 import { Link } from 'react-router-dom';
@@ -22,7 +22,7 @@ interface StepLeaderboardEntry {
 
 export default function StepsPage() {
   const { user, isAdmin } = useAuth();
-  const { todaySteps, history, loading, addSteps, setSteps } = useSteps();
+  const { todaySteps, history, loading, syncing, isNative, addSteps, setSteps, syncFromHealth } = useSteps();
   const [stepInput, setStepInput] = useState('');
   const [leaderboard, setLeaderboard] = useState<StepLeaderboardEntry[]>([]);
   const [lbLoading, setLbLoading] = useState(true);
@@ -75,6 +75,15 @@ export default function StepsPage() {
     }
   };
 
+  const handleSyncHealth = async () => {
+    const ok = await syncFromHealth();
+    if (ok) {
+      toast({ title: 'Steg synkade!', description: 'Dina steg har hämtats från hälsoappen.' });
+    } else {
+      toast({ title: 'Kunde inte synka', description: 'Kontrollera att du gett appen tillgång till hälsodata.', variant: 'destructive' });
+    }
+  };
+
   const handleAdminReset = async () => {
     if (!isAdmin) return;
     const { error } = await (supabase.from('step_entries') as any)
@@ -91,7 +100,9 @@ export default function StepsPage() {
       <div className="text-center mb-6">
         <Footprints className="h-10 w-10 text-primary mx-auto mb-2" />
         <h1 className="text-3xl font-display font-bold">Stegräknare</h1>
-        <p className="text-muted-foreground">Registrera dina steg varje dag</p>
+        <p className="text-muted-foreground">
+          {isNative ? 'Stegen synkas automatiskt från din hälsoapp' : 'Registrera dina steg varje dag'}
+        </p>
       </div>
 
       {user && (
@@ -105,18 +116,32 @@ export default function StepsPage() {
             <div className="text-4xl font-display font-bold text-primary mb-4">
               {todaySteps?.step_count || 0} <span className="text-lg text-muted-foreground">steg</span>
             </div>
-            <div className="flex gap-2">
-              <Input
-                type="number"
-                placeholder="Antal steg..."
-                value={stepInput}
-                onChange={e => setStepInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleAddSteps()}
-              />
-              <Button onClick={handleAddSteps} disabled={!stepInput}>
-                <Plus className="h-4 w-4 mr-1" /> Lägg till
+
+            {isNative ? (
+              <Button onClick={handleSyncHealth} disabled={syncing} className="w-full">
+                <RefreshCw className={`h-4 w-4 mr-1 ${syncing ? 'animate-spin' : ''}`} />
+                {syncing ? 'Synkar...' : 'Synka steg från hälsoappen'}
               </Button>
-            </div>
+            ) : (
+              <>
+                <div className="flex gap-2 mb-2">
+                  <Input
+                    type="number"
+                    placeholder="Antal steg..."
+                    value={stepInput}
+                    onChange={e => setStepInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleAddSteps()}
+                  />
+                  <Button onClick={handleAddSteps} disabled={!stepInput}>
+                    <Plus className="h-4 w-4 mr-1" /> Lägg till
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Smartphone className="h-3 w-3" />
+                  Använd native-appen för automatisk stegräkning via Apple Health / Google Fit
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       )}

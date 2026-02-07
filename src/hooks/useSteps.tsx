@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { isNativePlatform, getStepsForDate, requestHealthPermissions } from '@/utils/healthSteps';
 
 export interface StepEntry {
   id: string;
@@ -15,8 +16,14 @@ export function useSteps() {
   const [todaySteps, setTodaySteps] = useState<StepEntry | null>(null);
   const [history, setHistory] = useState<StepEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [isNative, setIsNative] = useState(false);
 
   const today = new Date().toISOString().split('T')[0];
+
+  useEffect(() => {
+    setIsNative(isNativePlatform());
+  }, []);
 
   const fetchToday = useCallback(async () => {
     if (!user) return;
@@ -45,6 +52,13 @@ export function useSteps() {
       fetchHistory();
     }
   }, [user, fetchToday, fetchHistory]);
+
+  // Auto-sync from health on native when page loads
+  useEffect(() => {
+    if (user && isNative) {
+      syncFromHealth();
+    }
+  }, [user, isNative]);
 
   const addSteps = async (count: number) => {
     if (!user) return false;
@@ -76,5 +90,49 @@ export function useSteps() {
     return false;
   };
 
-  return { todaySteps, history, loading, addSteps, setSteps, refetch: () => { fetchToday(); fetchHistory(); } };
+  const syncFromHealth = async (): Promise<boolean> => {
+    if (!user || !isNative) return false;
+    setSyncing(true);
+    try {
+      const permGranted = await requestHealthPermissions();
+      if (!permGranted) {
+        setSyncing(false);
+        return false;
+      }
+
+      const result = await getStepsForDate(today);
+      if (!result || result.steps <= 0) {
+        setSyncing(false);
+        return false;
+      }
+
+      // Use edge function for upsert
+      const { error } = await supabase.functions.invoke('sync-steps', {
+        body: { steps: result.steps, date: today },
+      });
+
+      if (!error) {
+        await fetchToday();
+        await fetchHistory();
+        setSyncing(false);
+        return true;
+      }
+    } catch (err) {
+      console.error('Health sync failed:', err);
+    }
+    setSyncing(false);
+    return false;
+  };
+
+  return {
+    todaySteps,
+    history,
+    loading,
+    syncing,
+    isNative,
+    addSteps,
+    setSteps,
+    syncFromHealth,
+    refetch: () => { fetchToday(); fetchHistory(); },
+  };
 }
