@@ -163,10 +163,28 @@ export default function AdminPage() {
     const updates: any = { status, reviewed_at: new Date().toISOString(), reviewed_by: user!.id };
     if (status === 'approved') updates.points_awarded = challengePoints;
 
+    // Find the submission to get user_id
+    const { data: sub } = await supabase.from('submissions').select('user_id, challenge_id').eq('id', id).maybeSingle();
+
     const { error } = await supabase.from('submissions').update(updates).eq('id', id);
     if (error) toast.error('Kunde inte uppdatera');
     else {
       toast.success(status === 'approved' ? 'Utmaning godkänd! ✅' : 'Utmaning avvisad ❌');
+
+      // Create notification for the user
+      if (sub) {
+        const notifData: any = {
+          user_id: sub.user_id,
+          type: 'challenge',
+          title: status === 'approved' ? '✅ Din utmaning är godkänd!' : '❌ Din utmaning avvisades',
+          message: status === 'approved'
+            ? 'Bra jobbat! Nästa utmaning är nu upplåst.'
+            : 'Din inlämning avvisades. Försök igen!',
+          link: '/',
+        };
+        await (supabase.from('notifications') as any).insert(notifData);
+      }
+
       fetchSubmissions();
     }
   };
