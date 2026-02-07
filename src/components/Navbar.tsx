@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useTeams } from '@/hooks/useTeams';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Trophy, User, Shield, LogOut, Menu, X, Users, Search, Footprints, Bell } from 'lucide-react';
@@ -11,6 +12,7 @@ export function Navbar() {
   const { user, isAdmin, signOut } = useAuth();
   const { branding } = useAppSettings();
   const { unreadCount } = useNotifications();
+  const { joinRequests, invitations } = useTeams();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -50,9 +52,14 @@ export function Navbar() {
                   Regler
                 </Button>
               </Link>
-              <Link to="/lag">
+              <Link to="/lag" className="relative">
                 <Button variant="ghost" size="sm" className="text-primary-foreground hover:bg-sweden-blue-light/20">
                   <Users className="h-4 w-4 mr-1" /> Lag
+                  {(joinRequests.length + invitations.length) > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] bg-destructive text-destructive-foreground">
+                      {joinRequests.length + invitations.length}
+                    </Badge>
+                  )}
                 </Button>
               </Link>
               <Link to="/steg">
@@ -114,7 +121,9 @@ export function Navbar() {
               <Link to="/tavlingar" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">Tävlingar</Link>
               <Link to="/leaderboard-alltime" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">Leaderboard</Link>
               <Link to="/regler" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">Regler</Link>
-              <Link to="/lag" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">Lag</Link>
+              <Link to="/lag" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2 flex items-center gap-2">
+                Lag {(joinRequests.length + invitations.length) > 0 && <Badge className="bg-destructive text-destructive-foreground text-xs">{joinRequests.length + invitations.length}</Badge>}
+              </Link>
               <Link to="/steg" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">👟 Stegräknare</Link>
               <Link to="/sok" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2">🔍 Sök spelare</Link>
               <Link to="/notiser" onClick={() => setMobileOpen(false)} className="text-primary-foreground py-2 flex items-center gap-2">
