@@ -1,6 +1,6 @@
 {
-  "name": "Sweden Challenge Race",
-  "short_name": "SC Race",
+  "name": "Kampen",
+  "short_name": "Kampen",
   "description": "Sveriges månatliga utmaningstävling",
   "start_url": "/",
   "display": "standalone",
