@@ -1,18 +1,49 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
-import { ScrollText, CheckCircle2 } from 'lucide-react';
+import { ScrollText, CheckCircle2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+
+interface RuleSection {
+  title: string;
+  content: string;
+}
+
+const FALLBACK_SECTIONS: RuleSection[] = [
+  { title: 'Allmänt', content: 'Deltagande i tävlingar i appen är helt gratis och frivilligt.\n\nTävlingarna är baserade på fysiska utomhusutmaningar och skicklighet.\n\nArrangören förbehåller sig rätten att ändra regler utan förvarning.' },
+  { title: 'Deltagande på egen risk', content: 'Alla utmaningar sker på egen risk. Deltagaren ansvarar själv för sin säkerhet.' },
+  { title: 'Allemansrätten och miljö', content: 'Följ allemansrätten. Lämna inga spår.' },
+  { title: 'Fusk och diskvalificering', content: 'Fusk leder till diskvalificering.' },
+  { title: 'Priser och vinnare', content: 'Priser delas ut baserat på leaderboard.' },
+  { title: 'Personuppgifter (GDPR)', content: 'Vi behandlar dina uppgifter för att hantera tävlingar. Samtycke ges vid godkännande.' },
+];
 
 export default function RulesPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [accepted, setAccepted] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [sections, setSections] = useState<RuleSection[]>(FALLBACK_SECTIONS);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'rules_sections')
+        .maybeSingle();
+      if (data?.value && Array.isArray(data.value)) {
+        setSections(data.value as unknown as RuleSection[]);
+      }
+      setLoading(false);
+    };
+    load();
+  }, []);
 
   const handleAccept = async () => {
     if (!user) { navigate('/auth'); return; }
@@ -29,6 +60,10 @@ export default function RulesPage() {
     setSaving(false);
   };
 
+  if (loading) {
+    return <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin" /></div>;
+  }
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
       <div className="flex items-center gap-2 mb-6">
@@ -38,33 +73,14 @@ export default function RulesPage() {
 
       <Card>
         <CardContent className="pt-6 prose prose-sm max-w-none dark:prose-invert">
-          <h2 className="text-xl font-display font-bold">Allmänt</h2>
-          <p>Deltagande i tävlingar i appen är helt gratis och frivilligt.</p>
-          <p>Tävlingarna är baserade på fysiska utomhusutmaningar och skicklighet (tid, kvalitet på bevis). Det finns ingen slump – vinnare utses efter objektiva kriterier (t.ex. totaltid eller admin-bedömning).</p>
-          <p>Arrangören förbehåller sig rätten att ändra regler, utmaningar eller avsluta tävlingar utan förvarning.</p>
-
-          <h2 className="text-xl font-display font-bold mt-6">Deltagande på egen risk</h2>
-          <p>Alla utmaningar sker på egen risk. Deltagaren ansvarar själv för sin säkerhet, hälsa och eventuella skador.</p>
-          <p>Appen rekommenderar: Använd sunt förnuft, kontrollera väder, undvik farliga situationer (t.ex. tunt is, starka strömmar, mörker utan lampa), ha rätt kläder/skor och informera någon om vart du är på väg.</p>
-          <p>Arrangören tar inget ansvar för personskador, egendomsskador eller andra förluster som uppstår under deltagande.</p>
-
-          <h2 className="text-xl font-display font-bold mt-6">Allemansrätten och miljö</h2>
-          <p>Följ allemansrätten: Gå, cykla, vistas i naturen – men störa inte djur, markägare eller andra.</p>
-          <p>Lämna inga spår: Ta med skräp, förstör inte natur eller egendom.</p>
-          <p>Undvik skyddade områden (nationalparker, naturreservat) om specifika regler förbjuder aktiviteter. Kolla alltid lokala restriktioner.</p>
-
-          <h2 className="text-xl font-display font-bold mt-6">Fusk och diskvalificering</h2>
-          <p>Fusk (t.ex. fejkade uploads, gammal video, hjälp från andra) leder till diskvalificering och eventuell avstängning från framtida tävlingar.</p>
-          <p>Arrangören/admin har rätt att neka eller ta bort inlämningar utan förklaring.</p>
-
-          <h2 className="text-xl font-display font-bold mt-6">Priser och vinnare</h2>
-          <p>Priser delas ut till vinnare baserat på leaderboard.</p>
-          <p>Vinnare kontaktas via app/email. Priser kan vara presentkort, prylar etc. – vinnaren ansvarar för skatt om priset överstiger skattefria gränser (kontrollera Skatteverket).</p>
-
-          <h2 className="text-xl font-display font-bold mt-6">Personuppgifter (GDPR)</h2>
-          <p>Vi behandlar dina uppgifter (namn/användarnamn, email, avatar, uploads, eventuell platsdata) för att hantera tävlingar, leaderboard och kommunikation.</p>
-          <p>Samtycke ges vid godkännande av regler. Du kan när som helst begära utdrag, rättelse eller radering via kontakt.</p>
-          <p>Data sparas så länge det behövs för tävlingar + max 12 månader efter.</p>
+          {sections.map((section, i) => (
+            <div key={i}>
+              <h2 className={`text-xl font-display font-bold ${i > 0 ? 'mt-6' : ''}`}>{section.title}</h2>
+              {section.content.split('\n\n').map((paragraph, j) => (
+                <p key={j}>{paragraph}</p>
+              ))}
+            </div>
+          ))}
         </CardContent>
       </Card>
 
