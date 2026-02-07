@@ -22,7 +22,7 @@ export function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 gradient-sweden border-b border-sweden-blue-light/20">
+    <nav className="sticky top-0 z-50 gradient-sweden border-b border-sweden-blue-light/20 pt-[env(safe-area-inset-top)]">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 text-primary-foreground">
           {branding.logo_url ? (
@@ -30,7 +30,7 @@ export function Navbar() {
           ) : (
             <Trophy className="h-6 w-6 text-sweden-gold" />
           )}
-          <span className="font-display text-lg font-bold tracking-tight">{branding.name || 'Sweden Challenge'}</span>
+          <span className="font-display text-lg font-bold tracking-tight">{branding.name || 'Kampen'}</span>
         </Link>
 
         {/* Desktop */}
