@@ -164,5 +164,11 @@ export function useTeams() {
     fetchMyTeams();
   };
 
-  return { myTeams, invitations, loading, createTeam, inviteMember, respondToInvitation, getTeamMembers, leaveTeam, refetch: fetchMyTeams };
+  const removeMember = async (teamId: string, memberId: string) => {
+    if (!user) return;
+    await (supabase.from('team_members') as any).delete().eq('team_id', teamId).eq('user_id', memberId);
+    toast.success('Medlem borttagen från laget');
+  };
+
+  return { myTeams, invitations, loading, createTeam, inviteMember, respondToInvitation, getTeamMembers, leaveTeam, removeMember, refetch: fetchMyTeams };
 }
