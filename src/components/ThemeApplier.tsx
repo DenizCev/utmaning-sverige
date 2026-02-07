@@ -26,6 +26,8 @@ export function ThemeApplier() {
         root.style.setProperty('--sweden-gold', hsl);
         root.style.setProperty('--secondary', hsl);
         root.style.setProperty('--accent', hsl);
+        root.style.setProperty('--primary', hsl);
+        root.style.setProperty('--ring', hsl);
         // Update meta theme-color tag
         const meta = document.querySelector('meta[name="theme-color"]');
         if (meta) meta.setAttribute('content', branding.theme_color);
@@ -34,6 +36,8 @@ export function ThemeApplier() {
       root.style.removeProperty('--sweden-gold');
       root.style.removeProperty('--secondary');
       root.style.removeProperty('--accent');
+      root.style.removeProperty('--primary');
+      root.style.removeProperty('--ring');
     }
 
     return () => {
@@ -41,6 +45,8 @@ export function ThemeApplier() {
       root.style.removeProperty('--sweden-gold');
       root.style.removeProperty('--secondary');
       root.style.removeProperty('--accent');
+      root.style.removeProperty('--primary');
+      root.style.removeProperty('--ring');
     };
   }, [branding.theme_color, branding.background_color]);
 
