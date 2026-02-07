@@ -1,0 +1,76 @@
+import { useEffect } from 'react';
+import { useAppSettings } from '@/hooks/useAppSettings';
+
+/**
+ * Applies dynamic theme_color and background_color from admin settings
+ * as CSS custom properties on the document root element.
+ */
+export function ThemeApplier() {
+  const { branding } = useAppSettings();
+
+  useEffect(() => {
+    const root = document.documentElement;
+
+    // Apply background color
+    if (branding.background_color) {
+      document.body.style.backgroundColor = branding.background_color;
+    } else {
+      document.body.style.backgroundColor = '';
+    }
+
+    // Apply theme color as accent/primary overrides
+    if (branding.theme_color) {
+      // Convert hex to HSL for CSS custom properties
+      const hsl = hexToHSL(branding.theme_color);
+      if (hsl) {
+        root.style.setProperty('--sweden-gold', hsl);
+        root.style.setProperty('--secondary', hsl);
+        root.style.setProperty('--accent', hsl);
+        // Update meta theme-color tag
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', branding.theme_color);
+      }
+    } else {
+      root.style.removeProperty('--sweden-gold');
+      root.style.removeProperty('--secondary');
+      root.style.removeProperty('--accent');
+    }
+
+    return () => {
+      document.body.style.backgroundColor = '';
+      root.style.removeProperty('--sweden-gold');
+      root.style.removeProperty('--secondary');
+      root.style.removeProperty('--accent');
+    };
+  }, [branding.theme_color, branding.background_color]);
+
+  return null;
+}
+
+function hexToHSL(hex: string): string | null {
+  // Remove # if present
+  hex = hex.replace(/^#/, '');
+  if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+  if (hex.length !== 6) return null;
+
+  const r = parseInt(hex.substring(0, 2), 16) / 255;
+  const g = parseInt(hex.substring(2, 4), 16) / 255;
+  const b = parseInt(hex.substring(4, 6), 16) / 255;
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0, s = 0;
+  const l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+      case g: h = ((b - r) / d + 2) / 6; break;
+      case b: h = ((r - g) / d + 4) / 6; break;
+    }
+  }
+
+  return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+}

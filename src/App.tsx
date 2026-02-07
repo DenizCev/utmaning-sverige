@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { Navbar } from "@/components/Navbar";
+import { ThemeApplier } from "@/components/ThemeApplier";
 import Dashboard from "./pages/Dashboard";
 import AuthPage from "./pages/AuthPage";
 import ChallengePage from "./pages/ChallengePage";
@@ -31,6 +32,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <ThemeApplier />
           <Navbar />
           <Routes>
             <Route path="/" element={<Dashboard />} />
