@@ -51,6 +51,13 @@ export default function Dashboard() {
   const [adDialogOpen, setAdDialogOpen] = useState(false);
   useEffect(() => { fetchCompetition(); }, [user]);
 
+  useEffect(() => {
+    if (!localStorage.getItem('icon_updated_v1_seen')) {
+      toast.info('Ny ikon uppdaterad! Ta bort appen från hemskärmen och lägg till igen för att få den nya versionen.', { duration: 10000 });
+      localStorage.setItem('icon_updated_v1_seen', 'true');
+    }
+  }, []);
+
   const fetchCompetition = async () => {
     setLoading(true);
     let { data: comp } = await (supabase.from('competitions') as any)
