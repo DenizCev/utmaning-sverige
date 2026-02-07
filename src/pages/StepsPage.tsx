@@ -4,11 +4,10 @@ import { useSteps } from '@/hooks/useSteps';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Footprints, Plus, Trophy, Calendar, RotateCcw, RefreshCw, Smartphone } from 'lucide-react';
+import { Footprints, Trophy, Calendar, RotateCcw, RefreshCw, Smartphone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { CharacterAvatar } from '@/components/CharacterAvatar';
 import { Link } from 'react-router-dom';
@@ -22,8 +21,7 @@ interface StepLeaderboardEntry {
 
 export default function StepsPage() {
   const { user, isAdmin } = useAuth();
-  const { todaySteps, history, loading, syncing, isNative, addSteps, setSteps, syncFromHealth } = useSteps();
-  const [stepInput, setStepInput] = useState('');
+  const { todaySteps, history, loading, syncing, isNative, syncFromHealth } = useSteps();
   const [leaderboard, setLeaderboard] = useState<StepLeaderboardEntry[]>([]);
   const [lbLoading, setLbLoading] = useState(true);
   const { toast } = useToast();
@@ -65,16 +63,6 @@ export default function StepsPage() {
     setLbLoading(false);
   };
 
-  const handleAddSteps = async () => {
-    const count = parseInt(stepInput);
-    if (!count || count <= 0) return;
-    const ok = await addSteps(count);
-    if (ok) {
-      toast({ title: 'Steg tillagda!', description: `+${count} steg registrerade` });
-      setStepInput('');
-    }
-  };
-
   const handleSyncHealth = async () => {
     const ok = await syncFromHealth();
     if (ok) {
@@ -101,7 +89,7 @@ export default function StepsPage() {
         <Footprints className="h-10 w-10 text-primary mx-auto mb-2" />
         <h1 className="text-3xl font-display font-bold">Stegräknare</h1>
         <p className="text-muted-foreground">
-          {isNative ? 'Stegen synkas automatiskt från din hälsoapp' : 'Registrera dina steg varje dag'}
+          Stegen synkas automatiskt från din hälsoapp
         </p>
       </div>
 
@@ -123,24 +111,13 @@ export default function StepsPage() {
                 {syncing ? 'Synkar...' : 'Synka steg från hälsoappen'}
               </Button>
             ) : (
-              <>
-                <div className="flex gap-2 mb-2">
-                  <Input
-                    type="number"
-                    placeholder="Antal steg..."
-                    value={stepInput}
-                    onChange={e => setStepInput(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleAddSteps()}
-                  />
-                  <Button onClick={handleAddSteps} disabled={!stepInput}>
-                    <Plus className="h-4 w-4 mr-1" /> Lägg till
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Smartphone className="h-3 w-3" />
-                  Använd native-appen för automatisk stegräkning via Apple Health / Google Fit
+              <div className="text-center py-4 text-muted-foreground">
+                <Smartphone className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm font-medium">Stegräkning kräver native-appen</p>
+                <p className="text-xs mt-1">
+                  Ladda ner appen för att automatiskt synka steg via Apple Health eller Google Fit.
                 </p>
-              </>
+              </div>
             )}
           </CardContent>
         </Card>
