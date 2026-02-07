@@ -109,8 +109,14 @@ export default function TeamProfilePage() {
     if (!user || !team) return;
     setRequesting(true);
 
+    // Delete any old accepted/declined invitations first to avoid unique constraint issues
+    await (supabase.from('team_invitations') as any)
+      .delete()
+      .eq('team_id', team.id)
+      .eq('invited_user_id', user.id)
+      .in('status', ['accepted', 'declined']);
+
     // Insert a join request as a team_invitation where the user invites themselves
-    // The team leader will see it and can accept/decline
     const { error } = await (supabase.from('team_invitations') as any)
       .insert({
         team_id: team.id,
