@@ -20,7 +20,7 @@ export interface StreakBonuses {
 
 export function useAppSettings() {
   const [branding, setBranding] = useState<AppBranding>({
-    name: 'Sweden Challenge Race',
+    name: 'Kampen',
     logo_url: null,
     background_url: null,
     background_color: null,
