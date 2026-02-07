@@ -18,4 +18,12 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      external: [
+        '@nicepay-corp/capacitor-healthkit',
+        '@nicepay-corp/capacitor-health-connect',
+      ],
+    },
+  },
 }));
