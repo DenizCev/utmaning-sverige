@@ -83,7 +83,8 @@ export default function AllTimeLeaderboardPage() {
         competitions_joined: compCounts[uid]?.size || 0,
         challenges_completed: userMap[uid].challenges.size,
       }))
-      .sort((a, b) => b.total_points - a.total_points);
+      .sort((a, b) => b.total_points - a.total_points)
+      .slice(0, 50);
 
     setEntries(result);
     if (user) {
