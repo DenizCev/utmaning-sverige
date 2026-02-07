@@ -174,7 +174,7 @@ export default function CompetitionsPage() {
             {cost === 0 && <Badge variant="outline" className="text-xs">Gratis</Badge>}
           </div>
 
-          {!started && comp.is_active && (
+          {!started && (
             <div>
               <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Startar om</p>
               <CountdownTimer targetDate={new Date(comp.start_time)} onComplete={() => fetchAll()} />
