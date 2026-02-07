@@ -8,15 +8,15 @@
   "theme_color": "#0f2d5c",
   "icons": [
     {
-      "src": "/icons/ikonkampen.jpg",
+      "src": "/icons/ikonkampen.png",
       "sizes": "192x192",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/ikonkampen.jpg",
+      "src": "/icons/ikonkampen.png",
       "sizes": "512x512",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]
