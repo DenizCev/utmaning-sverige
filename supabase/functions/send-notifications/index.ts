@@ -27,7 +27,6 @@ Deno.serve(async (req) => {
     const { data: upcomingComps } = await supabase
       .from('competitions')
       .select('id, name, start_time')
-      .eq('is_active', true)
       .gte('start_time', fiftyMinLater.toISOString())
       .lte('start_time', oneHourLater.toISOString())
 
