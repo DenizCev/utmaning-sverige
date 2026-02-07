@@ -2,3 +2,6 @@ project_id = "fwtbdwffnfljtodueukt"
 
 [functions.sync-steps]
 verify_jwt = false
+
+[functions.reset-daily-steps]
+verify_jwt = false
