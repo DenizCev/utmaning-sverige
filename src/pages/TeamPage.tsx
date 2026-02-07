@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Users, Plus, UserPlus, Crown, LogOut, Check, X, Mail, Loader2, Trash2 } from 'lucide-react';
+import { Users, Plus, UserPlus, Crown, LogOut, Check, X, Mail, Loader2, Trash2, UserCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useRef } from 'react';
@@ -18,7 +18,7 @@ import { useRef } from 'react';
 export default function TeamPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { myTeams, invitations, loading, createTeam, inviteMember, respondToInvitation, getTeamMembers, leaveTeam, removeMember } = useTeams();
+  const { myTeams, invitations, joinRequests, loading, createTeam, inviteMember, respondToInvitation, getTeamMembers, leaveTeam, removeMember } = useTeams();
   const [createOpen, setCreateOpen] = useState(false);
   const [teamName, setTeamName] = useState('');
   const [teamDesc, setTeamDesc] = useState('');
@@ -128,6 +128,31 @@ export default function TeamPage() {
                     <Check className="h-4 w-4 mr-1" /> Acceptera
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => respondToInvitation(inv.id, false)}>
+                    <X className="h-4 w-4 mr-1" /> Neka
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Join requests (for leaders) */}
+      {joinRequests.length > 0 && (
+        <Card className="mb-6 border-primary/40">
+          <CardHeader><CardTitle className="flex items-center gap-2"><UserCheck className="h-5 w-5" /> Förfrågningar att gå med</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            {joinRequests.map(req => (
+              <div key={req.id} className="flex items-center justify-between gap-3 p-3 rounded-lg bg-muted/50">
+                <div>
+                  <p className="font-semibold">{req.inviter_name || 'Okänd spelare'}</p>
+                  <p className="text-sm text-muted-foreground">Vill gå med i {req.team_name || 'ditt lag'}</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => respondToInvitation(req.id, true)} className="gradient-gold text-accent-foreground">
+                    <Check className="h-4 w-4 mr-1" /> Godkänn
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => respondToInvitation(req.id, false)}>
                     <X className="h-4 w-4 mr-1" /> Neka
                   </Button>
                 </div>

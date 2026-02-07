@@ -37,6 +37,7 @@ export function useTeams() {
   const { user } = useAuth();
   const [myTeams, setMyTeams] = useState<Team[]>([]);
   const [invitations, setInvitations] = useState<TeamInvitation[]>([]);
+  const [joinRequests, setJoinRequests] = useState<TeamInvitation[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchMyTeams = useCallback(async () => {
@@ -76,7 +77,46 @@ export function useTeams() {
     }
   }, [user]);
 
-  useEffect(() => { fetchMyTeams(); fetchInvitations(); }, [fetchMyTeams, fetchInvitations]);
+  const fetchJoinRequests = useCallback(async () => {
+    if (!user) return;
+    // Find teams where current user is leader
+    const { data: leaderOf } = await (supabase.from('team_members') as any)
+      .select('team_id')
+      .eq('user_id', user.id)
+      .eq('role', 'leader');
+    if (!leaderOf || leaderOf.length === 0) { setJoinRequests([]); return; }
+    const teamIds = leaderOf.map((m: any) => m.team_id);
+
+    // Get pending invitations where invited_by === invited_user_id (self-request)
+    const { data } = await (supabase.from('team_invitations') as any)
+      .select('*')
+      .in('team_id', teamIds)
+      .eq('status', 'pending');
+
+    if (data && data.length > 0) {
+      // Filter to only self-requests (join requests)
+      const selfRequests = data.filter((i: any) => i.invited_by === i.invited_user_id);
+      if (selfRequests.length > 0) {
+        const reqUserIds = selfRequests.map((i: any) => i.invited_user_id);
+        const tIds = [...new Set(selfRequests.map((i: any) => i.team_id))] as string[];
+        const { data: teams } = await (supabase.from('teams') as any).select('id, name').in('id', tIds);
+        const { data: profiles } = await supabase.from('profiles').select('user_id, username').in('user_id', reqUserIds);
+        const teamMap = Object.fromEntries((teams || []).map((t: any) => [t.id, t.name]));
+        const profileMap = Object.fromEntries((profiles || []).map((p: any) => [p.user_id, p.username]));
+        setJoinRequests(selfRequests.map((i: any) => ({
+          ...i,
+          team_name: teamMap[i.team_id],
+          inviter_name: profileMap[i.invited_user_id],
+        })));
+      } else {
+        setJoinRequests([]);
+      }
+    } else {
+      setJoinRequests([]);
+    }
+  }, [user]);
+
+  useEffect(() => { fetchMyTeams(); fetchInvitations(); fetchJoinRequests(); }, [fetchMyTeams, fetchInvitations, fetchJoinRequests]);
 
   // Realtime invitations
   useEffect(() => {
@@ -126,20 +166,22 @@ export function useTeams() {
 
   const respondToInvitation = async (invitationId: string, accept: boolean) => {
     if (!user) return;
-    const invitation = invitations.find(i => i.id === invitationId);
+    const invitation = invitations.find(i => i.id === invitationId) || joinRequests.find(i => i.id === invitationId);
     const { error } = await (supabase.from('team_invitations') as any)
       .update({ status: accept ? 'accepted' : 'declined' })
       .eq('id', invitationId);
     if (error) { toast.error('Kunde inte svara på inbjudan'); return; }
     if (accept && invitation) {
+      const userId = invitation.invited_user_id;
       await (supabase.from('team_members') as any)
-        .insert({ team_id: invitation.team_id, user_id: user.id, role: 'member' });
-      toast.success('Du gick med i laget! 🎉');
+        .insert({ team_id: invitation.team_id, user_id: userId, role: 'member' });
+      toast.success(userId === user.id ? 'Du gick med i laget! 🎉' : 'Spelaren har lagts till i laget! 🎉');
       fetchMyTeams();
     } else {
-      toast.info('Inbjudan nekad');
+      toast.info('Förfrågan nekad');
     }
     fetchInvitations();
+    fetchJoinRequests();
   };
 
   const getTeamMembers = async (teamId: string): Promise<TeamMember[]> => {
@@ -170,5 +212,5 @@ export function useTeams() {
     toast.success('Medlem borttagen från laget');
   };
 
-  return { myTeams, invitations, loading, createTeam, inviteMember, respondToInvitation, getTeamMembers, leaveTeam, removeMember, refetch: fetchMyTeams };
+  return { myTeams, invitations, joinRequests, loading, createTeam, inviteMember, respondToInvitation, getTeamMembers, leaveTeam, removeMember, refetch: fetchMyTeams };
 }
