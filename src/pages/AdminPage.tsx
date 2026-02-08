@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Plus, Trash2, CheckCircle, XCircle, Eye, Loader2, UserPlus, Flag, Palette, Users as UsersIcon, UsersRound, ScrollText } from 'lucide-react';
+import { Shield, Plus, Trash2, CheckCircle, XCircle, Eye, Loader2, UserPlus, Flag, Palette, Users as UsersIcon, UsersRound, ScrollText, Clock } from 'lucide-react';
 import { AdminParticipants } from '@/components/AdminParticipants';
 import { AdminBranding } from '@/components/AdminBranding';
 import { AdminUsers } from '@/components/AdminUsers';
@@ -48,6 +48,7 @@ export default function AdminPage() {
   // Submissions state
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [subLoading, setSubLoading] = useState(false);
+  const [pointsInput, setPointsInput] = useState<Record<string, number>>({});
 
 
   const [saving, setSaving] = useState(false);
@@ -82,6 +83,10 @@ export default function AdminPage() {
     const { data: chs } = await supabase.from('challenges').select('id').eq('competition_id', selectedCompId);
     if (!chs || chs.length === 0) { setSubmissions([]); setSubLoading(false); return; }
 
+    // Get competition start_time
+    const comp = competitions.find(c => c.id === selectedCompId);
+    const compStartTime = comp?.start_time ? new Date(comp.start_time).getTime() : null;
+
     const { data } = await supabase
       .from('submissions')
       .select('*')
@@ -96,11 +101,20 @@ export default function AdminPage() {
       const { data: fullChs } = await supabase.from('challenges').select('*').eq('competition_id', selectedCompId);
       const fullChallengeMap = Object.fromEntries((fullChs || []).map(c => [c.id, c]));
 
-      setSubmissions(data.map(s => ({
-        ...s,
-        username: profileMap[s.user_id] || 'Okänd',
-        challenge_title: fullChallengeMap[s.challenge_id]?.title || 'Okänd',
-      })));
+      const defaultPoints: Record<string, number> = {};
+      setSubmissions(data.map(s => {
+        const elapsedMs = compStartTime && s.submitted_at ? new Date(s.submitted_at).getTime() - compStartTime : null;
+        const ch = fullChallengeMap[s.challenge_id];
+        if (s.status === 'pending') defaultPoints[s.id] = ch?.points || 100;
+        return {
+          ...s,
+          username: profileMap[s.user_id] || 'Okänd',
+          challenge_title: ch?.title || 'Okänd',
+          challenge_points: ch?.points || 100,
+          elapsed_minutes: elapsedMs !== null && elapsedMs > 0 ? Math.round(elapsedMs / 60000) : null,
+        };
+      }));
+      setPointsInput(prev => ({ ...prev, ...defaultPoints }));
     } else {
       setSubmissions([]);
     }
@@ -371,7 +385,14 @@ export default function AdminPage() {
             <p className="text-muted-foreground text-center py-8">Inga inlämningar att granska.</p>
           ) : (
             <div className="space-y-3">
-              {submissions.map(sub => (
+              {submissions.map(sub => {
+                const elapsedH = sub.elapsed_minutes !== null ? Math.floor(sub.elapsed_minutes / 60) : null;
+                const elapsedM = sub.elapsed_minutes !== null ? sub.elapsed_minutes % 60 : null;
+                const elapsedStr = sub.elapsed_minutes !== null
+                  ? (elapsedH! > 0 ? `${elapsedH}h ${elapsedM}min` : `${elapsedM}min`)
+                  : '—';
+
+                return (
                 <Card key={sub.id}>
                   <CardContent className="py-4">
                     <div className="flex items-start justify-between gap-4">
@@ -383,6 +404,12 @@ export default function AdminPage() {
                         <p className="text-sm text-muted-foreground">
                           Inskickad: {new Date(sub.submitted_at).toLocaleString('sv-SE')}
                         </p>
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Clock className="h-3 w-3" /> Tid från start: <span className="font-mono font-semibold text-foreground">{elapsedStr}</span>
+                        </p>
+                        {sub.points_awarded != null && sub.status !== 'pending' && (
+                          <p className="text-sm text-muted-foreground">Poäng: <span className="font-semibold text-foreground">{sub.points_awarded}p</span></p>
+                        )}
                         {sub.file_url && (
                           <a href={sub.file_url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary flex items-center gap-1 mt-1 hover:underline">
                             <Eye className="h-3 w-3" /> Visa bevis
@@ -390,7 +417,7 @@ export default function AdminPage() {
                         )}
                         {sub.text_content && <p className="text-sm mt-1 bg-muted rounded p-2">{sub.text_content}</p>}
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex flex-col items-end gap-2 shrink-0">
                         <Badge className={
                           sub.status === 'approved' ? 'bg-success text-success-foreground' :
                           sub.status === 'rejected' ? 'bg-destructive text-destructive-foreground' :
@@ -400,19 +427,32 @@ export default function AdminPage() {
                         </Badge>
                         {sub.status === 'pending' && (
                           <>
-                            <Button size="sm" variant="outline" onClick={() => reviewSubmission(sub.id, 'approved', sub.points || 100)} className="text-success border-success">
-                              <CheckCircle className="h-4 w-4" />
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => reviewSubmission(sub.id, 'rejected', 0)} className="text-destructive border-destructive">
-                              <XCircle className="h-4 w-4" />
-                            </Button>
+                            <div className="flex items-center gap-1">
+                              <Label className="text-xs">Poäng:</Label>
+                              <Input
+                                type="number"
+                                min={0}
+                                className="w-20 h-8 text-sm"
+                                value={pointsInput[sub.id] ?? sub.challenge_points}
+                                onChange={e => setPointsInput(prev => ({ ...prev, [sub.id]: Number(e.target.value) }))}
+                              />
+                            </div>
+                            <div className="flex gap-1">
+                              <Button size="sm" variant="outline" onClick={() => reviewSubmission(sub.id, 'approved', pointsInput[sub.id] ?? sub.challenge_points)} className="text-success border-success">
+                                <CheckCircle className="h-4 w-4" />
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => reviewSubmission(sub.id, 'rejected', 0)} className="text-destructive border-destructive">
+                                <XCircle className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </>
                         )}
                       </div>
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                );
+              })}
             </div>
           )}
         </TabsContent>
