@@ -50,12 +50,26 @@ Deno.serve(async (req) => {
     }
 
     // 2. Daily claim reminder (for users who haven't claimed today)
+    // Only send if no diamond/streak notification was sent in the last 6 hours
+    const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000).toISOString()
+
     const { data: profiles } = await supabase
       .from('profiles')
       .select('user_id, last_claim_date, streak_count')
 
     for (const p of (profiles || [])) {
       if (p.last_claim_date !== today) {
+        // Check if we already sent a diamond/streak notification in the last 6 hours
+        const { data: recentNotifs } = await supabase
+          .from('notifications')
+          .select('id')
+          .eq('user_id', p.user_id)
+          .in('type', ['diamond', 'streak'])
+          .gte('created_at', sixHoursAgo)
+          .limit(1)
+
+        if (recentNotifs && recentNotifs.length > 0) continue
+
         // Remind to claim
         notifications.push({
           user_id: p.user_id,
