@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Plus, Trash2, CheckCircle, XCircle, Eye, Loader2, UserPlus, Flag, Palette, Users as UsersIcon, UsersRound, ScrollText, Clock } from 'lucide-react';
+import { Shield, Plus, Trash2, CheckCircle, XCircle, Eye, Loader2, UserPlus, Flag, Palette, Users as UsersIcon, UsersRound, ScrollText, Clock, Trophy } from 'lucide-react';
 import { AdminParticipants } from '@/components/AdminParticipants';
 import { AdminBranding } from '@/components/AdminBranding';
 import { AdminUsers } from '@/components/AdminUsers';
@@ -312,6 +312,11 @@ export default function AdminPage() {
         <TabsContent value="challenges">
           {selectedCompId ? (
             <>
+              <div className="mb-4 p-3 bg-muted/50 rounded-lg flex items-center gap-2">
+                <Trophy className="h-5 w-5 text-sweden-gold" />
+                <span className="font-semibold">Tävling:</span>
+                <span>{competitions.find(c => c.id === selectedCompId)?.name || '—'}</span>
+              </div>
               <Card className="mb-6">
                 <CardHeader><CardTitle>Lägg till utmaning</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
@@ -379,6 +384,13 @@ export default function AdminPage() {
 
         {/* SUBMISSIONS TAB */}
         <TabsContent value="submissions">
+          {selectedCompId && (
+            <div className="mb-4 p-3 bg-muted/50 rounded-lg flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-sweden-gold" />
+              <span className="font-semibold">Tävling:</span>
+              <span>{competitions.find(c => c.id === selectedCompId)?.name || '—'}</span>
+            </div>
+          )}
           {subLoading ? (
             <div className="text-center py-8"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>
           ) : submissions.length === 0 ? (
