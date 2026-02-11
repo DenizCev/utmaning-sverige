@@ -145,6 +145,7 @@ export default function ChallengePage() {
                     ref={fileInputRef}
                     type="file"
                     accept={challenge.proof_type === 'video' ? 'video/*' : 'image/*'}
+                    capture="environment"
                     className="hidden"
                     onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
                   />
