@@ -19,10 +19,18 @@ export function useStreak() {
       .eq('user_id', user.id)
       .maybeSingle();
     if (data) {
-      const today = new Date().toISOString().slice(0, 10);
+      const now = new Date();
       setStreakCount(data.streak_count || 0);
       setLastClaimDate(data.last_claim_date);
-      setCanClaim(data.last_claim_date !== today);
+      
+      // Check if 24 hours have passed since last claim
+      if (!data.last_claim_date) {
+        setCanClaim(true);
+      } else {
+        const lastClaim = new Date(data.last_claim_date + 'T00:00:00');
+        const hoursSinceClaim = (now.getTime() - lastClaim.getTime()) / (1000 * 60 * 60);
+        setCanClaim(hoursSinceClaim >= 24);
+      }
     }
     setLoading(false);
   }, [user]);
@@ -84,13 +92,12 @@ export function useStreak() {
     return true;
   };
 
-  // Time until next claim (midnight)
+  // Time until next claim (24h from last claim)
   const getTimeUntilReset = () => {
-    const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(0, 0, 0, 0);
-    return tomorrow.getTime() - now.getTime();
+    if (!lastClaimDate) return 0;
+    const lastClaim = new Date(lastClaimDate + 'T00:00:00');
+    const nextClaim = new Date(lastClaim.getTime() + 24 * 60 * 60 * 1000);
+    return Math.max(0, nextClaim.getTime() - Date.now());
   };
 
   return { streakCount, canClaim, lastClaimDate, loading, claimDaily, getTimeUntilReset, refetch: fetchStreak };
