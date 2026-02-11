@@ -212,5 +212,16 @@ export function useTeams() {
     toast.success('Medlem borttagen från laget');
   };
 
-  return { myTeams, invitations, joinRequests, loading, createTeam, inviteMember, respondToInvitation, getTeamMembers, leaveTeam, removeMember, refetch: fetchMyTeams };
+  const deleteTeam = async (teamId: string) => {
+    if (!user) return;
+    // Delete members, invitations, then team
+    await (supabase.from('team_members') as any).delete().eq('team_id', teamId);
+    await (supabase.from('team_invitations') as any).delete().eq('team_id', teamId);
+    const { error } = await (supabase.from('teams') as any).delete().eq('id', teamId);
+    if (error) { toast.error('Kunde inte ta bort laget'); return; }
+    toast.success('Laget har tagits bort');
+    fetchMyTeams();
+  };
+
+  return { myTeams, invitations, joinRequests, loading, createTeam, inviteMember, respondToInvitation, getTeamMembers, leaveTeam, removeMember, deleteTeam, refetch: fetchMyTeams };
 }

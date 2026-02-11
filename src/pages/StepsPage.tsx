@@ -3,11 +3,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSteps } from '@/hooks/useSteps';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Footprints, Trophy, Calendar, RotateCcw, RefreshCw, Smartphone } from 'lucide-react';
+import { Footprints, Trophy, Calendar, RotateCcw, RefreshCw, Smartphone, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { CharacterAvatar } from '@/components/CharacterAvatar';
 import { Link } from 'react-router-dom';
@@ -17,6 +18,37 @@ interface StepLeaderboardEntry {
   username: string;
   avatar_url: string | null;
   step_count: number;
+}
+
+function ManualStepInput({ userId, onSaved }: { userId: string; onSaved: () => void }) {
+  const [steps, setSteps] = useState('');
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
+  const today = new Date().toISOString().split('T')[0];
+
+  const handleSave = async () => {
+    const count = parseInt(steps);
+    if (isNaN(count) || count <= 0) { toast({ title: 'Ange ett giltigt antal steg', variant: 'destructive' }); return; }
+    setSaving(true);
+    const { error } = await supabase.functions.invoke('sync-steps', { body: { steps: count, date: today } });
+    if (error) {
+      toast({ title: 'Kunde inte spara steg', variant: 'destructive' });
+    } else {
+      toast({ title: 'Steg sparade!' });
+      setSteps('');
+      onSaved();
+    }
+    setSaving(false);
+  };
+
+  return (
+    <div className="flex gap-2">
+      <Input type="number" placeholder="Antal steg" value={steps} onChange={e => setSteps(e.target.value)} min={0} className="flex-1" />
+      <Button onClick={handleSave} disabled={saving || !steps}>
+        <Plus className="h-4 w-4 mr-1" /> {saving ? 'Sparar...' : 'Lägg till'}
+      </Button>
+    </div>
+  );
 }
 
 export default function StepsPage() {
@@ -111,12 +143,14 @@ export default function StepsPage() {
                 {syncing ? 'Synkar...' : 'Synka steg från hälsoappen'}
               </Button>
             ) : (
-              <div className="text-center py-4 text-muted-foreground">
-                <Smartphone className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm font-medium">Stegräkning kräver native-appen</p>
-                <p className="text-xs mt-1">
-                  Ladda ner appen för att automatiskt synka steg via Apple Health eller Google Fit.
-                </p>
+              <div className="space-y-3">
+                <div className="text-center text-muted-foreground">
+                  <Smartphone className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-xs">
+                    Automatisk synkning kräver native-appen. Du kan även mata in steg manuellt nedan.
+                  </p>
+                </div>
+                <ManualStepInput userId={user.id} onSaved={() => { syncFromHealth(); fetchLeaderboard(); }} />
               </div>
             )}
           </CardContent>

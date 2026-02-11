@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CharacterAvatar } from '@/components/CharacterAvatar';
 import { RankBadge } from '@/components/RankBadge';
-import { Diamond, Save, Search, Users, Loader2 } from 'lucide-react';
+import { Diamond, Save, Search, Users, Loader2, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface UserEntry {
@@ -18,6 +18,7 @@ interface UserEntry {
   all_time_points: number;
   streak_count: number;
   created_at: string;
+  email?: string;
 }
 
 export function AdminUsers() {
@@ -46,7 +47,19 @@ export function AdminUsers() {
       .from('profiles')
       .select('user_id, username, avatar_url, equipped_skin, diamonds, all_time_points, streak_count, created_at')
       .order('created_at', { ascending: false });
-    setUsers((data as UserEntry[]) || []);
+
+    // Fetch emails via edge function
+    let emailMap: Record<string, string> = {};
+    try {
+      const { data: emailData } = await supabase.functions.invoke('get-user-emails');
+      if (emailData?.emails) emailMap = emailData.emails;
+    } catch {}
+
+    const enriched = ((data as UserEntry[]) || []).map(u => ({
+      ...u,
+      email: emailMap[u.user_id] || undefined,
+    }));
+    setUsers(enriched);
     setLoading(false);
   };
 
@@ -114,6 +127,11 @@ export function AdminUsers() {
                 />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm truncate">{u.username}</p>
+                  {u.email && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
+                      <Mail className="h-3 w-3 shrink-0" /> {u.email}
+                    </p>
+                  )}
                   <div className="flex items-center gap-2 flex-wrap">
                     <RankBadge points={u.all_time_points} size="sm" />
                     <span className="text-xs text-muted-foreground">🔥 {u.streak_count}</span>

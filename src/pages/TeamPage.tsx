@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Users, Plus, UserPlus, Crown, LogOut, Check, X, Mail, Loader2, Trash2, UserCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -18,7 +19,7 @@ import { useRef } from 'react';
 export default function TeamPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { myTeams, invitations, joinRequests, loading, createTeam, inviteMember, respondToInvitation, getTeamMembers, leaveTeam, removeMember } = useTeams();
+  const { myTeams, invitations, joinRequests, loading, createTeam, inviteMember, respondToInvitation, getTeamMembers, leaveTeam, removeMember, deleteTeam } = useTeams();
   const [createOpen, setCreateOpen] = useState(false);
   const [teamName, setTeamName] = useState('');
   const [teamDesc, setTeamDesc] = useState('');
@@ -238,6 +239,30 @@ export default function TeamPage() {
                       <Button size="sm" variant="outline" onClick={() => leaveTeam(team.id)} className="text-destructive">
                         <LogOut className="h-4 w-4 mr-1" /> Lämna lag
                       </Button>
+                    )}
+
+                    {team.created_by === user.id && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button size="sm" variant="destructive" className="mt-2">
+                            <Trash2 className="h-4 w-4 mr-1" /> Ta bort lag
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Ta bort lag?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Är du säker? Laget "{team.name}" och alla medlemskap kommer att raderas permanent.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => deleteTeam(team.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                              Ta bort
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     )}
                   </div>
                 )}
