@@ -2,18 +2,20 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { ShareButton } from '@/components/ShareButton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Camera, Video, FileText, Upload, Clock, MapPin, ArrowLeft, Loader2 } from 'lucide-react';
+import { Camera, Video, FileText, Upload, Clock, MapPin, ArrowLeft, Loader2, Smartphone } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ChallengePage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [challenge, setChallenge] = useState<any>(null);
   const [existingSubmission, setExistingSubmission] = useState<any>(null);
@@ -141,27 +143,38 @@ export default function ChallengePage() {
                 />
               ) : (
                 <div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept={challenge.proof_type === 'video' ? 'video/*' : 'image/*'}
-                    capture="environment"
-                    className="hidden"
-                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                  />
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 transition-colors"
-                  >
-                    {selectedFile ? (
-                      <p className="text-foreground font-medium">{selectedFile.name}</p>
-                    ) : (
-                      <>
-                        <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                        <p className="text-muted-foreground">Klicka för att ladda upp {challenge.proof_type === 'video' ? 'video' : 'foto'}</p>
-                      </>
-                    )}
-                  </button>
+                  {isMobile ? (
+                    <>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept={challenge.proof_type === 'video' ? 'video/*' : 'image/*'}
+                        capture="environment"
+                        className="hidden"
+                        onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                      />
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 transition-colors"
+                      >
+                        {selectedFile ? (
+                          <p className="text-foreground font-medium">{selectedFile.name}</p>
+                        ) : (
+                          <>
+                            <Camera className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                            <p className="text-muted-foreground">Tryck för att öppna kameran och {challenge.proof_type === 'video' ? 'spela in video' : 'ta ett foto'}</p>
+                            <p className="text-xs text-muted-foreground mt-1">Endast nya foton/videos – inga befintliga filer</p>
+                          </>
+                        )}
+                      </button>
+                    </>
+                  ) : (
+                    <div className="w-full border-2 border-dashed border-border rounded-xl p-8 text-center bg-muted/30">
+                      <Smartphone className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                      <p className="text-muted-foreground font-medium">Använd din mobil</p>
+                      <p className="text-xs text-muted-foreground mt-1">Foto och video måste tas direkt med kameran på din telefon. Öppna denna sida på mobilen för att ladda upp.</p>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -172,7 +185,7 @@ export default function ChallengePage() {
 
               <Button
                 onClick={handleSubmit}
-                disabled={submitting || (challenge.proof_type === 'text' ? !textContent.trim() : !selectedFile)}
+                disabled={submitting || (challenge.proof_type === 'text' ? !textContent.trim() : (!selectedFile || !isMobile))}
                 className="w-full gradient-gold text-accent-foreground font-bold"
               >
                 {submitting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Skickar...</> : 'Ladda upp bevis'}
