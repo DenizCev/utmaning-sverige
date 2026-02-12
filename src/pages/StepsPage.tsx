@@ -7,10 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Footprints, Trophy, Calendar, RotateCcw, RefreshCw } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Footprints, Trophy, Calendar, RotateCcw, RefreshCw, Heart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { CharacterAvatar } from '@/components/CharacterAvatar';
 import { Link } from 'react-router-dom';
+import { isNativePlatform } from '@/utils/healthSteps';
 
 interface StepLeaderboardEntry {
   user_id: string;
@@ -24,7 +26,37 @@ export default function StepsPage() {
   const { todaySteps, history, loading, syncing, isNative, syncFromHealth } = useSteps();
   const [leaderboard, setLeaderboard] = useState<StepLeaderboardEntry[]>([]);
   const [lbLoading, setLbLoading] = useState(true);
+  const [showPermissionDialog, setShowPermissionDialog] = useState(false);
+  const [permissionGranted, setPermissionGranted] = useState(false);
   const { toast } = useToast();
+
+  // Show permission dialog on first visit on mobile
+  useEffect(() => {
+    const alreadyAsked = localStorage.getItem('health_permission_asked');
+    if (!alreadyAsked && isNativePlatform()) {
+      setShowPermissionDialog(true);
+    }
+    if (alreadyAsked === 'granted') {
+      setPermissionGranted(true);
+    }
+  }, []);
+
+  const handlePermissionAccept = async () => {
+    setShowPermissionDialog(false);
+    localStorage.setItem('health_permission_asked', 'granted');
+    setPermissionGranted(true);
+    // Trigger the actual native health permission + sync
+    const ok = await syncFromHealth();
+    if (ok) {
+      toast({ title: 'Steg synkade!', description: 'Dina steg har hämtats från hälsoappen.' });
+    }
+  };
+
+  const handlePermissionDeny = () => {
+    setShowPermissionDialog(false);
+    localStorage.setItem('health_permission_asked', 'denied');
+    toast({ title: 'Hälsodata nekad', description: 'Du kan aktivera detta senare via Synka-knappen.', variant: 'destructive' });
+  };
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -85,6 +117,30 @@ export default function StepsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
+      {/* Health permission dialog */}
+      <Dialog open={showPermissionDialog} onOpenChange={setShowPermissionDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <div className="flex justify-center mb-3">
+              <Heart className="h-12 w-12 text-destructive" />
+            </div>
+            <DialogTitle className="text-center">Tillåt hälsodata</DialogTitle>
+            <DialogDescription className="text-center">
+              Vill du ge appen tillåtelse att läsa dina steg från din hälsoapp (Apple Health / Google Fit)?
+              Detta krävs för att kunna tracka dina steg automatiskt i tävlingen.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col gap-2 sm:flex-col">
+            <Button onClick={handlePermissionAccept} className="w-full">
+              <Heart className="h-4 w-4 mr-2" /> Ja, tillåt
+            </Button>
+            <Button variant="outline" onClick={handlePermissionDeny} className="w-full">
+              Nej, inte nu
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="text-center mb-6">
         <Footprints className="h-10 w-10 text-primary mx-auto mb-2" />
         <h1 className="text-3xl font-display font-bold">Stegräknare</h1>
