@@ -30,10 +30,10 @@ export default function StepsPage() {
   const [permissionGranted, setPermissionGranted] = useState(false);
   const { toast } = useToast();
 
-  // Show permission dialog on first visit on mobile
+  // Show permission dialog on first visit
   useEffect(() => {
     const alreadyAsked = localStorage.getItem('health_permission_asked');
-    if (!alreadyAsked && isNativePlatform()) {
+    if (!alreadyAsked) {
       setShowPermissionDialog(true);
     }
     if (alreadyAsked === 'granted') {
