@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Trophy, Mail, Lock, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { supabase } from '@/integrations/supabase/client';
 
 const loginSchema = z.object({
   email: z.string().email('Ogiltig e-postadress'),
@@ -62,6 +63,15 @@ export default function AuthPage() {
             toast.error(error.message || 'Registreringen misslyckades');
           }
         } else {
+          // Send custom verification email via Resend
+          try {
+            const confirmationUrl = `${window.location.origin}/`;
+            await supabase.functions.invoke('send-auth-email', {
+              body: { to: parsed.email, type: 'verification', confirmationUrl },
+            });
+          } catch (mailErr) {
+            console.error('Kunde inte skicka verifieringsmail:', mailErr);
+          }
           toast.success('Konto skapat! Kontrollera din e-post för att bekräfta.');
         }
       }
