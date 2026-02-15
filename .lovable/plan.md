@@ -1,24 +1,45 @@
 
 
-## Fix: Byggfel som gör att appen inte visas
+# Skicka autentiseringsmail via Resend API
 
-### Problem
-Bygget kraschar eftersom `src/utils/healthSteps.ts` försöker importera native-plugins (`@nicepay-corp/capacitor-healthkit` och `@nicepay-corp/capacitor-health-connect`) som inte finns installerade. Dessa plugins ska bara installeras lokalt när man bygger den riktiga mobilappen.
+## Bakgrund
+Lovable Cloud-backenden exponerar inte SMTP-inställningar i sitt gränssnitt. Istället bygger vi en lösning med edge functions som skickar e-post direkt via Resend API.
 
-### Lösning
+## Översikt
+Alla mail som appen skickar (verifiering vid registrering, glömt lösenord) skickas via en egen backend-funktion som använder Resend, med avsändaradressen `sverigekampen@kampen.app` och avsändarnamnet "Kampen Sverige".
 
-**1. Uppdatera `src/utils/healthSteps.ts`**
-- Ändra de dynamiska importerna så att de fångar fel korrekt och inte kraschar Vite-bygget
-- Använda `try/catch` runt alla native-anrop och returnera `null`/`false` på webben
-- Markera importerna som externa i Vite-konfigurationen
+## Steg
 
-**2. Uppdatera `vite.config.ts`**
-- Lägga till `build.rollupOptions.external` för de två native-pluginsen så Rollup inte försöker lösa dem vid byggtid
+### 1. Spara Resend API-nyckel som hemlighet
+- Lagra din Resend API-nyckel säkert som en backend-hemlighet (`RESEND_API_KEY`)
+- Du kommer bli ombedd att klistra in nyckeln
 
-**3. Fixa CSS-varningen**
-- Flytta `@import`-raden i `src/index.css` till toppen av filen (före `@tailwind`-direktiven) för att följa CSS-specifikationen
+### 2. Skapa edge function: `send-auth-email`
+- Tar emot: mottagare, ämne, HTML-innehåll, typ (verification/recovery)
+- Skickar via Resend REST API (`https://api.resend.com/emails`)
+- Avsändare: `Kampen Sverige <sverigekampen@kampen.app>`
 
-### Resultat
-- Appen bygger och visas igen i webbläsaren precis som förut
-- Manuell steginmatning fungerar på webben
-- Native-synkning aktiveras bara när appen körs som riktig mobilapp via Capacitor
+### 3. Anpassa registreringsflödet
+- Vid registrering: Supabase skapar kontot men vi genererar en egen verifieringslänk/kod
+- Appen anropar edge functionen för att skicka verifieringsmail med svenska texter
+- Samma sak för "Glömt lösenord"-flödet
+
+### 4. Svenska mailmallar
+- Verifieringsmail: Svensk text med bekräftelselänk
+- Lösenordsåterställning: Svensk text med återställningslänk
+
+## Tekniska detaljer
+
+### Edge function (`supabase/functions/send-auth-email/index.ts`)
+- Använder `RESEND_API_KEY` från hemligheter
+- Endpoint: POST till `https://api.resend.com/emails`
+- Validerar input och returnerar status
+
+### Ändringar i frontend
+- `src/pages/AuthPage.tsx`: Efter `supabase.auth.signUp()` anropas edge functionen för att skicka eget verifieringsmail
+- Liknande för lösenordsåterställning
+
+### Begränsning
+- Supabase Auth skickar fortfarande sitt standardmail parallellt (kan inte stängas av helt utan dashboard-åtkomst)
+- Alternativ: Stäng av "Enable email confirmations" via auth-konfigurationen och hantera verifiering helt manuellt i appen
+
