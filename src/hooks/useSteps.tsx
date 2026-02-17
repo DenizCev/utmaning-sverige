@@ -1,7 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { isNativePlatform, getStepsForDate, requestHealthPermissions } from '@/utils/healthSteps';
+import {
+  isNativePlatform,
+  isHealthAvailable,
+  checkHealthPermissions,
+  requestHealthPermissions,
+  getStepsForDate,
+  openHealthSettings,
+} from '@/utils/healthSteps';
 
 export interface StepEntry {
   id: string;
@@ -11,6 +18,8 @@ export interface StepEntry {
   updated_at: string;
 }
 
+export type HealthPermissionStatus = 'unknown' | 'granted' | 'denied' | 'unavailable';
+
 export function useSteps() {
   const { user } = useAuth();
   const [todaySteps, setTodaySteps] = useState<StepEntry | null>(null);
@@ -18,12 +27,37 @@ export function useSteps() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [isNative, setIsNative] = useState(false);
+  const [permissionStatus, setPermissionStatus] = useState<HealthPermissionStatus>('unknown');
 
   const today = new Date().toISOString().split('T')[0];
 
+  // Detect native and check permission status on mount
   useEffect(() => {
-    setIsNative(isNativePlatform());
+    const native = isNativePlatform();
+    setIsNative(native);
+
+    if (native) {
+      checkPermissionStatus();
+    } else {
+      setPermissionStatus('unavailable');
+    }
   }, []);
+
+  const checkPermissionStatus = async () => {
+    const available = await isHealthAvailable();
+    if (!available) {
+      setPermissionStatus('unavailable');
+      return;
+    }
+    const granted = await checkHealthPermissions();
+    setPermissionStatus(granted ? 'granted' : 'denied');
+  };
+
+  const requestPermission = async (): Promise<boolean> => {
+    const granted = await requestHealthPermissions();
+    setPermissionStatus(granted ? 'granted' : 'denied');
+    return granted;
+  };
 
   const fetchToday = useCallback(async () => {
     if (!user) return;
@@ -53,26 +87,31 @@ export function useSteps() {
     }
   }, [user, fetchToday, fetchHistory]);
 
+  // Auto-sync when permission is granted
   useEffect(() => {
-    if (user && isNative) {
+    if (user && isNative && permissionStatus === 'granted') {
       syncFromHealth();
     }
-  }, [user, isNative]);
+  }, [user, isNative, permissionStatus]);
 
   const syncFromHealth = async (): Promise<boolean> => {
     if (!user || !isNative) return false;
     setSyncing(true);
     try {
-      const permGranted = await requestHealthPermissions();
-      if (!permGranted) {
-        setSyncing(false);
-        return false;
+      // If not granted yet, request permission first
+      if (permissionStatus !== 'granted') {
+        const granted = await requestPermission();
+        if (!granted) {
+          setSyncing(false);
+          return false;
+        }
       }
 
       const result = await getStepsForDate(today);
       if (!result || result.steps <= 0) {
         setSyncing(false);
-        return false;
+        // Still a success if we queried but got 0 steps
+        return true;
       }
 
       const { error } = await supabase.functions.invoke('sync-steps', {
@@ -98,7 +137,11 @@ export function useSteps() {
     loading,
     syncing,
     isNative,
+    permissionStatus,
+    requestPermission,
+    openHealthSettings,
     syncFromHealth,
+    checkPermissionStatus,
     refetch: () => { fetchToday(); fetchHistory(); },
   };
 }
