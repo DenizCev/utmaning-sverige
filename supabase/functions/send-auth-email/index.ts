@@ -45,9 +45,21 @@ Deno.serve(async (req) => {
       Tack för att du registrerade dig hos Kampen Sverige! Klicka på knappen nedan för att bekräfta din e-postadress och komma igång.
     </p>
     <div style="text-align: center; margin: 32px 0;">
-      <a href="${confirmationUrl}" style="background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #1a1a2e; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; display: inline-block;">
-        Bekräfta e-postadress
-      </a>
+      <!--[if mso]>
+      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${confirmationUrl}" style="height:48px;v-text-anchor:middle;width:250px;" arcsize="17%" strokecolor="#f59e0b" fillcolor="#fbbf24">
+        <w:anchorlock/>
+        <center style="color:#1a1a2e;font-family:sans-serif;font-size:16px;font-weight:bold;">Bekräfta e-postadress</center>
+      </v:roundrect>
+      <![endif]-->
+      <!--[if !mso]><!-->
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
+        <tr>
+          <td style="border-radius: 8px; background: #fbbf24;" align="center">
+            <a href="${confirmationUrl}" target="_blank" style="background: #fbbf24; color: #1a1a2e; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; display: inline-block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; mso-padding-alt: 0;">Bekräfta e-postadress</a>
+          </td>
+        </tr>
+      </table>
+      <!--<![endif]-->
     </div>
     <p style="color: #64748b; font-size: 13px; line-height: 1.5;">
       Om du inte skapade detta konto kan du ignorera detta meddelande.
@@ -75,9 +87,21 @@ Deno.serve(async (req) => {
       Du har begärt att återställa ditt lösenord. Klicka på knappen nedan för att välja ett nytt lösenord.
     </p>
     <div style="text-align: center; margin: 32px 0;">
-      <a href="${confirmationUrl}" style="background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #1a1a2e; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; display: inline-block;">
-        Återställ lösenord
-      </a>
+      <!--[if mso]>
+      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${confirmationUrl}" style="height:48px;v-text-anchor:middle;width:250px;" arcsize="17%" strokecolor="#f59e0b" fillcolor="#fbbf24">
+        <w:anchorlock/>
+        <center style="color:#1a1a2e;font-family:sans-serif;font-size:16px;font-weight:bold;">Återställ lösenord</center>
+      </v:roundrect>
+      <![endif]-->
+      <!--[if !mso]><!-->
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
+        <tr>
+          <td style="border-radius: 8px; background: #fbbf24;" align="center">
+            <a href="${confirmationUrl}" target="_blank" style="background: #fbbf24; color: #1a1a2e; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; display: inline-block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; mso-padding-alt: 0;">Återställ lösenord</a>
+          </td>
+        </tr>
+      </table>
+      <!--<![endif]-->
     </div>
     <p style="color: #64748b; font-size: 13px; line-height: 1.5;">
       Om du inte begärde detta kan du ignorera detta meddelande. Länken är giltig i 1 timme.
