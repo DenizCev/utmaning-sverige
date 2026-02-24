@@ -1,5 +1,3 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -28,89 +26,96 @@ Deno.serve(async (req) => {
 
     let subject: string;
     let html: string;
+    let text: string;
 
     if (type === "verification") {
-      subject = "Bekräfta din e-postadress – Kampen Sverige";
-      html = `
-<!DOCTYPE html>
+      subject = "Bekräfta din e-postadress";
+      text = `Välkommen till Kampen Sverige!\n\nTack för att du registrerade dig. Bekräfta din e-postadress genom att klicka på länken nedan:\n\n${confirmationUrl}\n\nOm du inte skapade detta konto kan du ignorera detta meddelande.\n\nMed vänliga hälsningar,\nKampen Sverige`;
+      html = `<!DOCTYPE html>
 <html lang="sv">
-<head><meta charset="UTF-8"></head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0f0f23; color: #e2e8f0; padding: 40px 20px;">
-  <div style="max-width: 480px; margin: 0 auto; background: #1a1a2e; border-radius: 16px; padding: 32px; border: 1px solid #2a2a4a;">
-    <div style="text-align: center; margin-bottom: 24px;">
-      <h1 style="color: #fbbf24; font-size: 24px; margin: 0;">🏆 Kampen Sverige</h1>
-    </div>
-    <h2 style="color: #f1f5f9; font-size: 18px;">Välkommen!</h2>
-    <p style="color: #94a3b8; line-height: 1.6;">
-      Tack för att du registrerade dig hos Kampen Sverige! Klicka på knappen nedan för att bekräfta din e-postadress och komma igång.
-    </p>
-    <div style="text-align: center; margin: 32px 0;">
-      <!--[if mso]>
-      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${confirmationUrl}" style="height:48px;v-text-anchor:middle;width:250px;" arcsize="17%" strokecolor="#f59e0b" fillcolor="#fbbf24">
-        <w:anchorlock/>
-        <center style="color:#1a1a2e;font-family:sans-serif;font-size:16px;font-weight:bold;">Bekräfta e-postadress</center>
-      </v:roundrect>
-      <![endif]-->
-      <!--[if !mso]><!-->
-      <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
-        <tr>
-          <td style="border-radius: 8px; background: #fbbf24;" align="center">
-            <a href="${confirmationUrl}" target="_blank" style="background: #fbbf24; color: #1a1a2e; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; display: inline-block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; mso-padding-alt: 0;">Bekräfta e-postadress</a>
-          </td>
-        </tr>
-      </table>
-      <!--<![endif]-->
-    </div>
-    <p style="color: #64748b; font-size: 13px; line-height: 1.5;">
-      Om du inte skapade detta konto kan du ignorera detta meddelande.
-    </p>
-    <hr style="border: none; border-top: 1px solid #2a2a4a; margin: 24px 0;">
-    <p style="color: #475569; font-size: 12px; text-align: center;">
-      © Kampen Sverige – Tävla. Utmana. Vinn.
-    </p>
-  </div>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;background-color:#f4f4f4;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f4f4f4;">
+    <tr>
+      <td align="center" style="padding:40px 20px;">
+        <table role="presentation" width="480" cellspacing="0" cellpadding="0" border="0" style="background-color:#ffffff;border-radius:8px;max-width:480px;width:100%;">
+          <tr>
+            <td style="padding:32px 32px 0;text-align:center;">
+              <p style="font-size:22px;font-weight:bold;color:#1a1a2e;margin:0;">Kampen Sverige</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px 32px;">
+              <p style="font-size:16px;color:#333333;margin:0 0 16px;">Hej!</p>
+              <p style="font-size:15px;color:#555555;line-height:1.6;margin:0 0 24px;">
+                Tack för att du registrerade dig hos Kampen Sverige. Klicka på knappen nedan för att bekräfta din e-postadress och komma igång.
+              </p>
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin:0 auto;">
+                <tr>
+                  <td style="border-radius:6px;background-color:#fbbf24;" align="center">
+                    <a href="${confirmationUrl}" target="_blank" style="display:inline-block;padding:14px 32px;color:#1a1a2e;font-size:16px;font-weight:bold;text-decoration:none;font-family:Arial,Helvetica,sans-serif;">Bekräfta e-postadress</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="font-size:13px;color:#888888;line-height:1.5;margin:24px 0 0;">
+                Om du inte skapade detta konto kan du ignorera detta meddelande.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 32px;border-top:1px solid #eeeeee;text-align:center;">
+              <p style="font-size:12px;color:#aaaaaa;margin:0;">Kampen Sverige – kampen.app</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>`;
     } else if (type === "recovery") {
-      subject = "Återställ ditt lösenord – Kampen Sverige";
-      html = `
-<!DOCTYPE html>
+      subject = "Återställ ditt lösenord";
+      text = `Hej!\n\nDu har begärt att återställa ditt lösenord hos Kampen Sverige. Klicka på länken nedan:\n\n${confirmationUrl}\n\nOm du inte begärde detta kan du ignorera meddelandet. Länken är giltig i 1 timme.\n\nMed vänliga hälsningar,\nKampen Sverige`;
+      html = `<!DOCTYPE html>
 <html lang="sv">
-<head><meta charset="UTF-8"></head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0f0f23; color: #e2e8f0; padding: 40px 20px;">
-  <div style="max-width: 480px; margin: 0 auto; background: #1a1a2e; border-radius: 16px; padding: 32px; border: 1px solid #2a2a4a;">
-    <div style="text-align: center; margin-bottom: 24px;">
-      <h1 style="color: #fbbf24; font-size: 24px; margin: 0;">🏆 Kampen Sverige</h1>
-    </div>
-    <h2 style="color: #f1f5f9; font-size: 18px;">Återställ lösenord</h2>
-    <p style="color: #94a3b8; line-height: 1.6;">
-      Du har begärt att återställa ditt lösenord. Klicka på knappen nedan för att välja ett nytt lösenord.
-    </p>
-    <div style="text-align: center; margin: 32px 0;">
-      <!--[if mso]>
-      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${confirmationUrl}" style="height:48px;v-text-anchor:middle;width:250px;" arcsize="17%" strokecolor="#f59e0b" fillcolor="#fbbf24">
-        <w:anchorlock/>
-        <center style="color:#1a1a2e;font-family:sans-serif;font-size:16px;font-weight:bold;">Återställ lösenord</center>
-      </v:roundrect>
-      <![endif]-->
-      <!--[if !mso]><!-->
-      <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
-        <tr>
-          <td style="border-radius: 8px; background: #fbbf24;" align="center">
-            <a href="${confirmationUrl}" target="_blank" style="background: #fbbf24; color: #1a1a2e; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; display: inline-block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; mso-padding-alt: 0;">Återställ lösenord</a>
-          </td>
-        </tr>
-      </table>
-      <!--<![endif]-->
-    </div>
-    <p style="color: #64748b; font-size: 13px; line-height: 1.5;">
-      Om du inte begärde detta kan du ignorera detta meddelande. Länken är giltig i 1 timme.
-    </p>
-    <hr style="border: none; border-top: 1px solid #2a2a4a; margin: 24px 0;">
-    <p style="color: #475569; font-size: 12px; text-align: center;">
-      © Kampen Sverige – Tävla. Utmana. Vinn.
-    </p>
-  </div>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;background-color:#f4f4f4;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f4f4f4;">
+    <tr>
+      <td align="center" style="padding:40px 20px;">
+        <table role="presentation" width="480" cellspacing="0" cellpadding="0" border="0" style="background-color:#ffffff;border-radius:8px;max-width:480px;width:100%;">
+          <tr>
+            <td style="padding:32px 32px 0;text-align:center;">
+              <p style="font-size:22px;font-weight:bold;color:#1a1a2e;margin:0;">Kampen Sverige</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px 32px;">
+              <p style="font-size:16px;color:#333333;margin:0 0 16px;">Hej!</p>
+              <p style="font-size:15px;color:#555555;line-height:1.6;margin:0 0 24px;">
+                Du har begärt att återställa ditt lösenord. Klicka på knappen nedan för att välja ett nytt lösenord.
+              </p>
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin:0 auto;">
+                <tr>
+                  <td style="border-radius:6px;background-color:#fbbf24;" align="center">
+                    <a href="${confirmationUrl}" target="_blank" style="display:inline-block;padding:14px 32px;color:#1a1a2e;font-size:16px;font-weight:bold;text-decoration:none;font-family:Arial,Helvetica,sans-serif;">Återställ lösenord</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="font-size:13px;color:#888888;line-height:1.5;margin:24px 0 0;">
+                Om du inte begärde detta kan du ignorera meddelandet. Länken är giltig i 1 timme.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 32px;border-top:1px solid #eeeeee;text-align:center;">
+              <p style="font-size:12px;color:#aaaaaa;margin:0;">Kampen Sverige – kampen.app</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>`;
     } else {
@@ -127,10 +132,15 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Kampen Sverige <sverigekampen@kampen.app>",
+        from: "Kampen Sverige <noreply@kampen.app>",
+        reply_to: "support@kampen.app",
         to: [to],
         subject,
         html,
+        text,
+        headers: {
+          "X-Entity-Ref-ID": crypto.randomUUID(),
+        },
       }),
     });
 
