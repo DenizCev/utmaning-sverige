@@ -6,6 +6,7 @@ import {
   isHealthAvailable,
   checkHealthPermissions,
   requestHealthPermissions,
+  getPlatform,
   getStepsForDate,
   openHealthSettings,
 } from '@/utils/healthSteps';
@@ -102,8 +103,15 @@ export function useSteps() {
         return false;
       }
 
-      // If not granted yet, request permission first
-      if (permissionStatus !== 'granted') {
+      const platform = getPlatform();
+
+      // iOS permission status checks are unreliable, so always trigger request flow before sync.
+      if (platform === 'ios') {
+        const granted = await requestPermission();
+        if (!granted) {
+          return false;
+        }
+      } else if (permissionStatus !== 'granted') {
         const granted = await requestPermission();
         if (!granted) {
           return false;

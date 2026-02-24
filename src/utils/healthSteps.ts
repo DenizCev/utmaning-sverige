@@ -62,8 +62,9 @@ function hasGrantedPermission(response: unknown, key: string): boolean {
 export async function checkHealthPermissions(): Promise<boolean> {
   if (!isNativePlatform()) return false;
 
-  // iOS does not provide a reliable read-permission status via this API.
-  if (getPlatform() === 'ios') return true;
+  // iOS does not provide a reliable read-permission status via checkHealthPermissions.
+  // Return false here so we always trigger an explicit request flow before syncing.
+  if (getPlatform() === 'ios') return false;
 
   try {
     const { Health } = await import('capacitor-health');
