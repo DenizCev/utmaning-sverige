@@ -43,13 +43,31 @@ export default function StepsPage() {
   };
 
   const handleSyncHealth = async () => {
+    if (!isNative) {
+      toast({
+        title: 'Stegsynk kräver mobilappen',
+        description: 'Öppna appen i iOS/Android-appen för att synka från hälsoappen.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (permissionStatus === 'unavailable') {
+      toast({
+        title: 'Hälsoappen är inte tillgänglig',
+        description: 'Öppna hälsokonfiguration och aktivera/installera hälsoappen först.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const ok = await syncFromHealth();
     if (ok) {
       toast({ title: 'Steg synkade!', description: 'Dina steg har hämtats från hälsoappen.' });
     } else {
       toast({
         title: 'Kunde inte synka',
-        description: 'Kontrollera att du gett appen tillgång till hälsodata.',
+        description: 'Kontrollera behörighet i Hälsa/Health Connect och försök igen.',
         variant: 'destructive',
       });
     }
@@ -79,25 +97,42 @@ export default function StepsPage() {
         </p>
       </div>
 
-      {/* Permission banner – shown when permission is denied or unknown on native */}
-      {isNative && permissionStatus !== 'granted' && permissionStatus !== 'unavailable' && (
+      {/* Permission banner – shown when permission is missing on native */}
+      {isNative && permissionStatus !== 'granted' && (
         <Alert className="mb-6 border-primary/30 bg-primary/5">
           <Heart className="h-5 w-5 text-primary" />
           <AlertDescription className="ml-2">
-            <p className="font-semibold mb-2">Appen behöver tillgång till hälsodata</p>
-            <p className="text-sm text-muted-foreground mb-3">
-              Tillåt appen att läsa dina steg från Apple Health / Google Fit för att kunna tracka steg i tävlingen.
-            </p>
-            <div className="flex flex-col gap-2">
-              <Button onClick={handleRequestPermission} className="w-full">
-                <Heart className="h-4 w-4 mr-2" /> Ge tillåtelse
-              </Button>
-              {permissionStatus === 'denied' && (
+            {permissionStatus === 'unavailable' ? (
+              <>
+                <p className="font-semibold mb-2">Hälsoappen behöver aktiveras</p>
+                <p className="text-sm text-muted-foreground mb-3">
+                  På Android behöver Health Connect vara installerad. På iPhone hanteras åtkomst i Apple Hälsa.
+                </p>
                 <Button variant="outline" onClick={handleOpenSettings} className="w-full">
-                  <Settings className="h-4 w-4 mr-2" /> Öppna inställningar
+                  <Settings className="h-4 w-4 mr-2" /> Öppna hälsokonfiguration
                 </Button>
-              )}
-            </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  iPhone: Inställningar {'>'} Appar {'>'} Hälsa {'>'} Dataåtkomst och enheter {'>'} Kampen
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="font-semibold mb-2">Appen behöver tillgång till hälsodata</p>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Tillåt appen att läsa dina steg från Apple Health / Google Fit för att kunna tracka steg i tävlingen.
+                </p>
+                <div className="flex flex-col gap-2">
+                  <Button onClick={handleRequestPermission} className="w-full">
+                    <Heart className="h-4 w-4 mr-2" /> Ge tillåtelse
+                  </Button>
+                  {permissionStatus === 'denied' && (
+                    <Button variant="outline" onClick={handleOpenSettings} className="w-full">
+                      <Settings className="h-4 w-4 mr-2" /> Öppna inställningar
+                    </Button>
+                  )}
+                </div>
+              </>
+            )}
           </AlertDescription>
         </Alert>
       )}
@@ -114,13 +149,22 @@ export default function StepsPage() {
               {todaySteps?.step_count || 0} <span className="text-lg text-muted-foreground">steg</span>
             </div>
 
-            <Button onClick={handleSyncHealth} disabled={syncing} className="w-full">
+            <Button
+              onClick={handleSyncHealth}
+              disabled={syncing || !isNative || permissionStatus === 'unavailable'}
+              className="w-full"
+            >
               <RefreshCw className={`h-4 w-4 mr-1 ${syncing ? 'animate-spin' : ''}`} />
-              {syncing ? 'Synkar...' : 'Synka steg från hälsoappen'}
+              {!isNative ? 'Stegsynk kräver mobilappen' : syncing ? 'Synkar...' : 'Synka steg från hälsoappen'}
             </Button>
             {!isNative && (
               <p className="text-xs text-center text-muted-foreground mt-2">
                 Synkar med Apple Health / Google Fit via native-appen
+              </p>
+            )}
+            {isNative && permissionStatus === 'unavailable' && (
+              <p className="text-xs text-center text-muted-foreground mt-2">
+                Öppna hälsokonfigurationen ovan för att installera/aktivera hälsoappen.
               </p>
             )}
           </CardContent>

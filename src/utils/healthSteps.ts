@@ -39,19 +39,38 @@ export async function isHealthAvailable(): Promise<boolean> {
 }
 
 /**
+ * Internal helper to safely read permission responses across platforms.
+ */
+function hasGrantedPermission(response: unknown, key: string): boolean {
+  const permissions = (response as { permissions?: unknown })?.permissions;
+
+  if (Array.isArray(permissions)) {
+    return permissions.some((entry) => (entry as Record<string, boolean> | undefined)?.[key] === true);
+  }
+
+  if (permissions && typeof permissions === 'object') {
+    return Boolean((permissions as Record<string, boolean>)[key]);
+  }
+
+  return false;
+}
+
+/**
  * Check current permission status for step reading.
  * Returns true if already granted.
  */
 export async function checkHealthPermissions(): Promise<boolean> {
   if (!isNativePlatform()) return false;
+
+  // iOS does not provide a reliable read-permission status via this API.
+  if (getPlatform() === 'ios') return true;
+
   try {
     const { Health } = await import('capacitor-health');
     const result = await Health.checkHealthPermissions({
       permissions: ['READ_STEPS'],
     });
-    // permissions is an array of objects
-    const perms = result.permissions?.[0] || {};
-    return perms['READ_STEPS'] === true;
+    return hasGrantedPermission(result, 'READ_STEPS');
   } catch (err) {
     console.error('checkHealthPermissions error:', err);
     return false;
@@ -66,10 +85,14 @@ export async function requestHealthPermissions(): Promise<boolean> {
   if (!isNativePlatform()) return false;
   try {
     const { Health } = await import('capacitor-health');
+    const platform = getPlatform();
 
     // First check if health is available
     const available = await Health.isHealthAvailable();
     if (!available.available) {
+      if (platform === 'android' && typeof Health.showHealthConnectInPlayStore === 'function') {
+        await Health.showHealthConnectInPlayStore();
+      }
       console.warn('Health API not available on this device');
       return false;
     }
@@ -78,8 +101,8 @@ export async function requestHealthPermissions(): Promise<boolean> {
       permissions: ['READ_STEPS'],
     });
 
-    const perms = result.permissions?.[0] || {};
-    const granted = perms['READ_STEPS'] === true;
+    // iOS reports this optimistically for read permissions.
+    const granted = platform === 'ios' ? true : hasGrantedPermission(result, 'READ_STEPS');
     console.log('Health permission result:', JSON.stringify(result), 'granted:', granted);
     return granted;
   } catch (err) {
@@ -98,8 +121,16 @@ export async function openHealthSettings(): Promise<void> {
     const platform = getPlatform();
     if (platform === 'ios') {
       await Health.openAppleHealthSettings();
-    } else if (platform === 'android') {
-      await Health.openHealthConnectSettings();
+      return;
+    }
+
+    if (platform === 'android') {
+      const available = await Health.isHealthAvailable();
+      if (available.available) {
+        await Health.openHealthConnectSettings();
+      } else if (typeof Health.showHealthConnectInPlayStore === 'function') {
+        await Health.showHealthConnectInPlayStore();
+      }
     }
   } catch (err) {
     console.error('openHealthSettings error:', err);

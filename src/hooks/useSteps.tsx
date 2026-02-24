@@ -98,19 +98,25 @@ export function useSteps() {
     if (!user || !isNative) return false;
     setSyncing(true);
     try {
+      if (permissionStatus === 'unavailable') {
+        return false;
+      }
+
       // If not granted yet, request permission first
       if (permissionStatus !== 'granted') {
         const granted = await requestPermission();
         if (!granted) {
-          setSyncing(false);
           return false;
         }
       }
 
       const result = await getStepsForDate(today);
-      if (!result || result.steps <= 0) {
-        setSyncing(false);
-        // Still a success if we queried but got 0 steps
+      if (!result) {
+        return false;
+      }
+
+      // Still a success if we queried but got 0 steps
+      if (result.steps <= 0) {
         return true;
       }
 
@@ -118,17 +124,18 @@ export function useSteps() {
         body: { steps: result.steps, date: today },
       });
 
-      if (!error) {
-        await fetchToday();
-        await fetchHistory();
-        setSyncing(false);
-        return true;
+      if (error) {
+        return false;
       }
+
+      await Promise.all([fetchToday(), fetchHistory()]);
+      return true;
     } catch (err) {
       console.error('Health sync failed:', err);
+      return false;
+    } finally {
+      setSyncing(false);
     }
-    setSyncing(false);
-    return false;
   };
 
   return {
