@@ -47,5 +47,9 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Kampen behöver tillgång till Apple Hälsa för att läsa dina steg och visa dem i tävlingen.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Kampen använder Apple Hälsa för att synka stegdata.</string>
 </dict>
 </plist>

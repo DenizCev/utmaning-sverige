@@ -43,15 +43,6 @@ export default function StepsPage() {
   };
 
   const handleSyncHealth = async () => {
-    if (!isNative) {
-      toast({
-        title: 'Stegsynk kräver native-app',
-        description: 'Detta fungerar bara i den riktiga iOS/Android-appen (inte i Safari/PWA).',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     if (permissionStatus === 'unavailable') {
       toast({
         title: 'Hälsoappen är inte tillgänglig',
@@ -137,18 +128,6 @@ export default function StepsPage() {
         </Alert>
       )}
 
-      {!isNative && (
-        <Alert className="mb-6 border-primary/30 bg-primary/5">
-          <Heart className="h-5 w-5 text-primary" />
-          <AlertDescription className="ml-2">
-            <p className="font-semibold mb-2">Stegsynk fungerar inte i webbläsaren</p>
-            <p className="text-sm text-muted-foreground">
-              För att ge Apple Hälsa/Health Connect-tillgång måste du öppna appen som native-app.
-              I Safari/PWA går det inte att be om den behörigheten.
-            </p>
-          </AlertDescription>
-        </Alert>
-      )}
 
       {user && (
         <Card className="mb-6">
@@ -168,14 +147,9 @@ export default function StepsPage() {
               className="w-full"
             >
               <RefreshCw className={`h-4 w-4 mr-1 ${syncing ? 'animate-spin' : ''}`} />
-              {!isNative ? 'Öppna i native-app för stegsynk' : syncing ? 'Synkar...' : 'Synka steg från hälsoappen'}
+              {syncing ? 'Synkar...' : 'Synka steg från hälsoappen'}
             </Button>
-            {!isNative && (
-              <p className="text-xs text-center text-muted-foreground mt-2">
-                Steg och hälsobehörighet fungerar bara i iOS/Android-appen, inte i webbläsaren.
-              </p>
-            )}
-            {isNative && permissionStatus === 'unavailable' && (
+            {permissionStatus === 'unavailable' && (
               <p className="text-xs text-center text-muted-foreground mt-2">
                 Öppna hälsokonfigurationen ovan för att installera/aktivera hälsoappen.
               </p>
