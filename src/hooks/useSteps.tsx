@@ -45,11 +45,22 @@ export function useSteps() {
   }, []);
 
   const checkPermissionStatus = async () => {
+    const platform = getPlatform();
     const available = await isHealthAvailable();
+    console.log('[useSteps] isHealthAvailable:', available, 'platform:', platform);
+
+    if (!available && platform === 'ios') {
+      // iOS may return false before entitlement is recognised – don't block
+      console.log('[useSteps] iOS reported unavailable, treating as denied so user can still try');
+      setPermissionStatus('denied');
+      return;
+    }
+
     if (!available) {
       setPermissionStatus('unavailable');
       return;
     }
+
     const granted = await checkHealthPermissions();
     setPermissionStatus(granted ? 'granted' : 'denied');
   };
@@ -99,9 +110,7 @@ export function useSteps() {
     if (!user || !isNative) return false;
     setSyncing(true);
     try {
-      if (permissionStatus === 'unavailable') {
-        return false;
-      }
+      // Don't block on 'unavailable' – iOS may report false negatives
 
       const platform = getPlatform();
 

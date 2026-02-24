@@ -43,22 +43,13 @@ export default function StepsPage() {
   };
 
   const handleSyncHealth = async () => {
-    if (permissionStatus === 'unavailable') {
-      toast({
-        title: 'Hälsoappen är inte tillgänglig',
-        description: 'Öppna hälsokonfiguration och aktivera/installera hälsoappen först.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     const ok = await syncFromHealth();
     if (ok) {
       toast({ title: 'Steg synkade!', description: 'Dina steg har hämtats från hälsoappen.' });
     } else {
       toast({
         title: 'Kunde inte synka',
-        description: 'Kontrollera behörighet i Hälsa/Health Connect och försök igen.',
+        description: 'Kontrollera att Kampen har tillgång i Inställningar > Hälsa > Kampen och försök igen.',
         variant: 'destructive',
       });
     }
@@ -143,17 +134,12 @@ export default function StepsPage() {
 
             <Button
               onClick={handleSyncHealth}
-              disabled={syncing || (isNative && permissionStatus === 'unavailable')}
+              disabled={syncing}
               className="w-full"
             >
               <RefreshCw className={`h-4 w-4 mr-1 ${syncing ? 'animate-spin' : ''}`} />
               {syncing ? 'Synkar...' : 'Synka steg från hälsoappen'}
             </Button>
-            {permissionStatus === 'unavailable' && (
-              <p className="text-xs text-center text-muted-foreground mt-2">
-                Öppna hälsokonfigurationen ovan för att installera/aktivera hälsoappen.
-              </p>
-            )}
           </CardContent>
         </Card>
       )}
