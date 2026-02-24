@@ -1,57 +1,69 @@
 
 
-# Fix: Stegsynk och behörigheter for riktig App Store-app
+# Fix: HealthKit entitlement saknas -- appen kan aldrig komma at Apple Halsa
 
-## Problem
+## Problemet
 
-Tre saker hindrar stegräknaren fran att fungera i en nedladdad app:
+Appen visar "Halsoappen ar inte tillganglig" for att iOS-projektet saknar en **entitlements-fil med HealthKit-capability**. Utan den returnerar pluginet `isHealthAvailable() = false` oavsett om Apple Halsa finns pa telefonen.
 
-1. **`capacitor.config.ts` pekar pa en webbadress** (`server.url`) -- detta gor att appen laddar webbversionen istallet for det inbyggda native-paketet. Darfor returnerar `Capacitor.isNativePlatform()` falskt och appen tror att den kors i en webblasare.
+Detta ar **samma problem** i bade TestFlight och App Store -- det handlar inte om testmiljon utan om att builden saknar rattigheten.
 
-2. **iOS `Info.plist` saknar HealthKit-nycklar** -- utan `NSHealthShareUsageDescription` kan iOS aldrig visa behorighetsfragan for Apple Halsa.
-
-3. **Vilseledande UI-texter** -- Sidan visar "Stegsynk fungerar inte i webblasaren" aven nar appen kors som native-app, vilket forvirrar anvandaren.
+Det behovs tva saker:
+1. En `.entitlements`-fil med HealthKit aktiverad
+2. Battre felhantering i koden sa att `isHealthAvailable()` inte blockerar allt om nagt gar fel
 
 ## Andringar
 
-### 1. Ta bort `server.url` fran Capacitor-konfigurationen
-**Fil:** `capacitor.config.ts`
+### 1. Skapa HealthKit entitlements-fil
+**Ny fil:** `ios/App/App/App.entitlements`
 
-Ta bort hela `server`-blocket sa att appen laddar fran sitt lokala bundle. Detta ar den kritiska fixen -- utan den identifierar sig appen som "web" och all native-funktionalitet blockeras.
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>com.apple.developer.healthkit</key>
+    <true/>
+    <key>com.apple.developer.healthkit.access</key>
+    <array>
+        <string>health-records</string>
+    </array>
+</dict>
+</plist>
+```
 
-### 2. Lagga till HealthKit-nycklar i Info.plist
-**Fil:** `ios/App/App/Info.plist`
+### 2. Forbattra felhantering i `useSteps.tsx`
+**Fil:** `src/hooks/useSteps.tsx`
 
-Lagga till:
-- `NSHealthShareUsageDescription` -- "Kampen behover tillgang till Apple Halsa for att lasa dina steg och visa dem i tavlingen."
-- `NSHealthUpdateUsageDescription` -- "Kampen anvander Apple Halsa for att synka stegdata."
+- Om `isHealthAvailable()` returnerar `false` pa iOS, satt inte `permissionStatus` till `'unavailable'` direkt -- forsok istallet begara permission anda, eftersom pluginet ibland returnerar falskt negativt pa iOS nar entitlement ar ny
+- Lagg till console.log for att gora det lattare att felsoka
 
-### 3. Ta bort vilseledande webblasarvarning fran stegsidan
+### 3. Forbattra toast-meddelande i StepsPage
 **Fil:** `src/pages/StepsPage.tsx`
 
-- Ta bort hela Alert-blocket (rad 140-151) som sager "Stegsynk fungerar inte i webblasaren..."
-- Ta bort texten "Oppna i native-app for stegsynk" fran knappen
-- Ta bort den lilla texten under knappen om att "Steg och halsobehorighet fungerar bara i iOS/Android-appen"
-- Alla anvandare (oavsett plattform) ser bara synk-knappen rakt av -- om nagon oppnar via webblasaren hanteras felet graciost i handleSyncHealth med en toast
+- Andra toast-meddelandet fran "Halsoappen ar inte tillganglig" till ett mer hjalpande meddelande som forklarar att anvandaren kan behova ge tillgang manuellt i Installningar > Halsa > Kampen
+- Ta bort blockeringen `disabled={... permissionStatus === 'unavailable'}` fran synk-knappen sa att anvandaren alltid kan forsoka
 
-### 4. Forbattra handleSyncHealth-logik
-**Fil:** `src/pages/StepsPage.tsx`
+## Viktigt: Manuellt steg i Xcode
 
-Istallet for att blockera med en toast nar `isNative === false`, forsok alltid synka. Om det misslyckas (t.ex. i webblasare) visas ett generellt felmeddelande utan att namna Safari/PWA.
-
-### 5. Android Health Connect-behorigheter
-**Fil:** `android/app/src/main/AndroidManifest.xml`
-
-Lagga till `android.permission.health.READ_STEPS` permission och Health Connect intent-filter for framtida Android-stod.
-
-## Efter implementation
-
-Du behover gora foljande lokalt:
+Entitlements-filen maste kopplas till iOS-targeten i Xcode. Efter `git pull` och `npx cap sync`:
 
 ```text
-1. git pull
-2. npm run build
-3. npx cap sync
-4. Bygg ny iOS-archive i Xcode och ladda upp till App Store / TestFlight
+1. Oppna ios/App/App.xcodeproj i Xcode
+2. Valj "App" target
+3. Ga till "Signing & Capabilities"
+4. Klicka "+ Capability" och lagg till "HealthKit"
+5. Xcode kopplar automatiskt entitlements-filen
+6. Bygg ny archive och ladda upp
 ```
+
+Alternativt kan du hoppa over att lagga till filen manuellt -- om du bara gar till Signing & Capabilities i Xcode och lagger till HealthKit sa skapar Xcode filen at dig automatiskt.
+
+## Sammanfattning
+
+| Andring | Syfte |
+|---------|-------|
+| Ny `App.entitlements` fil | Ger appen HealthKit-rattighet pa iOS |
+| Battre felhantering i `useSteps.tsx` | Forsok synka aven om `isHealthAvailable` returnerar false pa iOS |
+| Uppdaterad UI i `StepsPage.tsx` | Battre vag ledning, ingen blockerad knapp |
 
