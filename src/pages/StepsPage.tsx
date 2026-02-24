@@ -45,8 +45,8 @@ export default function StepsPage() {
   const handleSyncHealth = async () => {
     if (!isNative) {
       toast({
-        title: 'Stegsynk kräver mobilappen',
-        description: 'Öppna appen i iOS/Android-appen för att synka från hälsoappen.',
+        title: 'Stegsynk kräver native-app',
+        description: 'Detta fungerar bara i den riktiga iOS/Android-appen (inte i Safari/PWA).',
         variant: 'destructive',
       });
       return;
@@ -137,6 +137,19 @@ export default function StepsPage() {
         </Alert>
       )}
 
+      {!isNative && (
+        <Alert className="mb-6 border-primary/30 bg-primary/5">
+          <Heart className="h-5 w-5 text-primary" />
+          <AlertDescription className="ml-2">
+            <p className="font-semibold mb-2">Stegsynk fungerar inte i webbläsaren</p>
+            <p className="text-sm text-muted-foreground">
+              För att ge Apple Hälsa/Health Connect-tillgång måste du öppna appen som native-app.
+              I Safari/PWA går det inte att be om den behörigheten.
+            </p>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {user && (
         <Card className="mb-6">
           <CardHeader className="pb-2">
@@ -151,15 +164,15 @@ export default function StepsPage() {
 
             <Button
               onClick={handleSyncHealth}
-              disabled={syncing || !isNative || permissionStatus === 'unavailable'}
+              disabled={syncing || (isNative && permissionStatus === 'unavailable')}
               className="w-full"
             >
               <RefreshCw className={`h-4 w-4 mr-1 ${syncing ? 'animate-spin' : ''}`} />
-              {!isNative ? 'Stegsynk kräver mobilappen' : syncing ? 'Synkar...' : 'Synka steg från hälsoappen'}
+              {!isNative ? 'Öppna i native-app för stegsynk' : syncing ? 'Synkar...' : 'Synka steg från hälsoappen'}
             </Button>
             {!isNative && (
               <p className="text-xs text-center text-muted-foreground mt-2">
-                Synkar med Apple Health / Google Fit via native-appen
+                Steg och hälsobehörighet fungerar bara i iOS/Android-appen, inte i webbläsaren.
               </p>
             )}
             {isNative && permissionStatus === 'unavailable' && (
