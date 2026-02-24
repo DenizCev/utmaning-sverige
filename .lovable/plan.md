@@ -1,45 +1,57 @@
 
 
-# Skicka autentiseringsmail via Resend API
+# Fix: Stegsynk och behörigheter for riktig App Store-app
 
-## Bakgrund
-Lovable Cloud-backenden exponerar inte SMTP-inställningar i sitt gränssnitt. Istället bygger vi en lösning med edge functions som skickar e-post direkt via Resend API.
+## Problem
 
-## Översikt
-Alla mail som appen skickar (verifiering vid registrering, glömt lösenord) skickas via en egen backend-funktion som använder Resend, med avsändaradressen `sverigekampen@kampen.app` och avsändarnamnet "Kampen Sverige".
+Tre saker hindrar stegräknaren fran att fungera i en nedladdad app:
 
-## Steg
+1. **`capacitor.config.ts` pekar pa en webbadress** (`server.url`) -- detta gor att appen laddar webbversionen istallet for det inbyggda native-paketet. Darfor returnerar `Capacitor.isNativePlatform()` falskt och appen tror att den kors i en webblasare.
 
-### 1. Spara Resend API-nyckel som hemlighet
-- Lagra din Resend API-nyckel säkert som en backend-hemlighet (`RESEND_API_KEY`)
-- Du kommer bli ombedd att klistra in nyckeln
+2. **iOS `Info.plist` saknar HealthKit-nycklar** -- utan `NSHealthShareUsageDescription` kan iOS aldrig visa behorighetsfragan for Apple Halsa.
 
-### 2. Skapa edge function: `send-auth-email`
-- Tar emot: mottagare, ämne, HTML-innehåll, typ (verification/recovery)
-- Skickar via Resend REST API (`https://api.resend.com/emails`)
-- Avsändare: `Kampen Sverige <sverigekampen@kampen.app>`
+3. **Vilseledande UI-texter** -- Sidan visar "Stegsynk fungerar inte i webblasaren" aven nar appen kors som native-app, vilket forvirrar anvandaren.
 
-### 3. Anpassa registreringsflödet
-- Vid registrering: Supabase skapar kontot men vi genererar en egen verifieringslänk/kod
-- Appen anropar edge functionen för att skicka verifieringsmail med svenska texter
-- Samma sak för "Glömt lösenord"-flödet
+## Andringar
 
-### 4. Svenska mailmallar
-- Verifieringsmail: Svensk text med bekräftelselänk
-- Lösenordsåterställning: Svensk text med återställningslänk
+### 1. Ta bort `server.url` fran Capacitor-konfigurationen
+**Fil:** `capacitor.config.ts`
 
-## Tekniska detaljer
+Ta bort hela `server`-blocket sa att appen laddar fran sitt lokala bundle. Detta ar den kritiska fixen -- utan den identifierar sig appen som "web" och all native-funktionalitet blockeras.
 
-### Edge function (`supabase/functions/send-auth-email/index.ts`)
-- Använder `RESEND_API_KEY` från hemligheter
-- Endpoint: POST till `https://api.resend.com/emails`
-- Validerar input och returnerar status
+### 2. Lagga till HealthKit-nycklar i Info.plist
+**Fil:** `ios/App/App/Info.plist`
 
-### Ändringar i frontend
-- `src/pages/AuthPage.tsx`: Efter `supabase.auth.signUp()` anropas edge functionen för att skicka eget verifieringsmail
-- Liknande för lösenordsåterställning
+Lagga till:
+- `NSHealthShareUsageDescription` -- "Kampen behover tillgang till Apple Halsa for att lasa dina steg och visa dem i tavlingen."
+- `NSHealthUpdateUsageDescription` -- "Kampen anvander Apple Halsa for att synka stegdata."
 
-### Begränsning
-- Supabase Auth skickar fortfarande sitt standardmail parallellt (kan inte stängas av helt utan dashboard-åtkomst)
-- Alternativ: Stäng av "Enable email confirmations" via auth-konfigurationen och hantera verifiering helt manuellt i appen
+### 3. Ta bort vilseledande webblasarvarning fran stegsidan
+**Fil:** `src/pages/StepsPage.tsx`
+
+- Ta bort hela Alert-blocket (rad 140-151) som sager "Stegsynk fungerar inte i webblasaren..."
+- Ta bort texten "Oppna i native-app for stegsynk" fran knappen
+- Ta bort den lilla texten under knappen om att "Steg och halsobehorighet fungerar bara i iOS/Android-appen"
+- Alla anvandare (oavsett plattform) ser bara synk-knappen rakt av -- om nagon oppnar via webblasaren hanteras felet graciost i handleSyncHealth med en toast
+
+### 4. Forbattra handleSyncHealth-logik
+**Fil:** `src/pages/StepsPage.tsx`
+
+Istallet for att blockera med en toast nar `isNative === false`, forsok alltid synka. Om det misslyckas (t.ex. i webblasare) visas ett generellt felmeddelande utan att namna Safari/PWA.
+
+### 5. Android Health Connect-behorigheter
+**Fil:** `android/app/src/main/AndroidManifest.xml`
+
+Lagga till `android.permission.health.READ_STEPS` permission och Health Connect intent-filter for framtida Android-stod.
+
+## Efter implementation
+
+Du behover gora foljande lokalt:
+
+```text
+1. git pull
+2. npm run build
+3. npx cap sync
+4. Bygg ny iOS-archive i Xcode och ladda upp till App Store / TestFlight
+```
 
