@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Kampen</string>
+    <string name="title_activity_main">Kampen</string>
+    <string name="package_name">app.lovable.kampen</string>
+    <string name="custom_url_scheme">app.lovable.kampen</string>
+</resources>

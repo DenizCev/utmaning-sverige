@@ -1,0 +1,23 @@
+{
+  "name": "Kampen Sverige",
+  "short_name": "Kampen",
+  "description": "Sveriges månatliga utmaningstävling",
+  "start_url": "/?v=1",
+  "display": "standalone",
+  "background_color": "#0f2d5c",
+  "theme_color": "#0f2d5c",
+  "icons": [
+    {
+      "src": "/icons/ikonkampen.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/ikonkampen.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
