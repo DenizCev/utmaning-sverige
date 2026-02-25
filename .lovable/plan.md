@@ -1,89 +1,91 @@
 
-Mål
-- Ta bort beroendet av manuell Xcode-archivering helt, så att stegsynk fungerar via en CI-byggd native iOS-app.
-- Säkerställa att HealthKit-entitlement faktiskt finns i den signerade TestFlight-builden (inte bara i källkod).
-- Göra felsökning i appen tydlig så att vi snabbt ser om felet är behörighet, entitlement, datumintervall eller inloggning.
+Målbild
+- Göra stegsynk stabil i CI-byggd iOS-app (TestFlight/App Store) utan krav på manuell Xcode-archive.
+- Rensa bort onödig komplexitet så flödet blir: push kod → workflow bygger/signerar → stegsynk fungerar.
 
-Vad jag hittade i nuvarande implementation
-1) iOS-projektet har `CODE_SIGN_ENTITLEMENTS = App/App.entitlements` i Debug/Release (bra).
-2) Entitlements-filen innehåller:
-   - `com.apple.developer.healthkit = true` (rätt)
-   - `com.apple.developer.healthkit.access = health-records` (onödigt för stegräkning och kan skapa signerings-/profilfriktion).
-3) Fastlane-lanen tvingar manuell signing:
-   - `use_automatic_signing: false`
-   - explicit provisioning profile
-   Detta går emot målet “automatic code signing” och ökar risken att fel profil används.
-4) CI-flödet verifierar inte att det signerade arkivet verkligen innehåller HealthKit-entitlement.
-5) Frontend visar idag ett generiskt fel vid synk och fångar inte exakt felorsak från native-anrop.
+Vad som faktiskt ser ut att vara huvudfelet just nu
+1) Kritisk kodbugg i stegsynk:
+- I `src/utils/healthSteps.ts` skickas `bucket: '1day'` till `Health.queryAggregated(...)`.
+- Pluginet (`capacitor-health`) accepterar `bucket: "day"` (inte `"1day"`), både i iOS- och Android-implementationen.
+- Detta kan ge query-fel även om entitlement/signering är korrekt, vilket matchar symptom “native build finns men synk funkar inte”.
 
-Genomförandeplan (i ordning)
-Fas 1: Stabilisera iOS-signering för CI (ingen manuell Xcode krävs)
-- Justera Fastlane till automatic signing för App-target.
-- Ta bort/neutralisera hård koppling till manuell provisioning profile i lane-konfiguration.
-- Behålla App Store Connect API-nyckel-flöde för upload.
+2) CI-flödet är nära rätt men inte helt “fail-fast”:
+- Workflow verifierar HealthKit-entitlement efter att fastlane-lanen redan har uploadat.
+- Det bör verifieras innan upload, så fel build aldrig skickas upp.
 
-Fas 2: Rensa entitlements till minsta nödvändiga för steg
-- Behåll endast HealthKit-basentitlement för steg.
-- Ta bort “health-records”-åtkomst från entitlements för att minska mismatch-risk mellan app-id/profil och binär.
+3) Entitlements är inte minimala:
+- `ios/App/App/App.entitlements` innehåller extra nyckel `com.apple.developer.healthkit.access` (tom array).
+- För step read räcker `com.apple.developer.healthkit = true`; extra nyckeln kan skapa onödig friktion.
 
-Fas 3: Lägg in “fail-fast” verifiering i CI före upload
-- Efter archive: extrahera signerade entitlements från appen i `.xcarchive`.
-- Kontrollera explicit att `com.apple.developer.healthkit == true`.
-- Om kontrollen misslyckas: avbryt pipeline innan upload.
-- Ladda upp build-artifacts/loggar så vi kan verifiera exakt vad som signerades.
+4) Ingen backend-data/loggar för steg:
+- Inga färska rader i `step_entries` och inga körningar för `sync-steps` hittades, vilket stärker att flödet faller redan innan server-anrop (dvs i health query/permission).
 
-Fas 4: Förbättra felsökning i stegsynk i appen
-- Returnera/fånga mer specifika fel i `useSteps`/`healthSteps`:
-  - ej inloggad
-  - Health API unavailable
-  - permission nekad
-  - query-fel från native
-  - server-/svarsfel vid lagring
-- Visa tydligare svensk feltext i UI (t.ex. “HealthKit saknas i denna build” vs “Ingen stegdata hittades idag”).
-- Lägg en diskret debugpanel (endast i native/debug-läge) med:
-  - plattform
-  - permissionStatus
-  - isHealthAvailable-resultat
-  - senaste sync-felmeddelande
-  - datumintervall som skickades till query.
+Genomförande (fokuserat, minimalt, utan “extra saker”)
+Fas 1 — Fixa den verkliga synk-buggen
+- Ändra bucket till `day` i `getStepsForDate`.
+- Förbättra felretur från `getStepsForDate` så originalfel från plugin (t.ex. “Unsupported bucket”) bubblar upp till `useSteps` istället för att maskeras till `null`.
+- Justera felmeddelanden i `useSteps` så de blir diagnostiska men korta på svenska.
 
-Fas 5: Verifiering end-to-end (kritisk)
-- Kör CI-workflow och installera ny Internal TestFlight-build.
-- Verifiera i appen:
-  1) Permission-dialog visas korrekt
-  2) “Synka steg” ger data
-  3) Steg sparas i backend
-  4) Historik/leaderboard uppdateras
-- Verifiera även edge case:
-  - användare utan steg idag
-  - nekad behörighet
-  - utloggad användare.
+Fas 2 — Rensa iOS capability/entitlement till minsta fungerande
+- I `App.entitlements`: behåll endast HealthKit-basentitlement.
+- Säkerställ att projektets capability-konfiguration är konsekvent med detta (så CI-signering får samma resultat som manuell archive hade gett).
 
-Teknisk detaljerad ändringslista
-- `.github/workflows/ios-testflight.yml`
-  - förenkla signing-flöde till automatic signing-kompatibelt upplägg
-  - lägg till entitlement-verifieringssteg efter archive
-  - spara relevanta artifacts/loggar
-- `ios/App/fastlane/Fastfile`
-  - ändra signing-strategi till automatic
-  - ta bort hård profilmappning som kan låsa fel capability-set
-  - behåll upload till TestFlight
+Fas 3 — Göra CI verkligen självförsörjande (ingen manuell Xcode)
+- Behåll `npm run build` + `npx cap sync ios` i workflow (detta ersätter manuellt sync/prepare).
+- Flytta entitlement-verifiering till innan upload:
+  - bygg archive/ipa
+  - kontrollera signerad binär innehåller `com.apple.developer.healthkit`
+  - endast därefter upload till TestFlight
+- Behåll artifact-uppladdning för loggar så felsökning kan ske utan Xcode lokalt.
+
+Fas 4 — Förenkla och “avbrusa”
+- Ta bort/undvik överflödiga steg i workflow/lane som inte behövs för ditt mål.
+- Behålla endast nödvändigt för: signering, build, entitlement-check, upload.
+- Behålla debug-info i appen men endast som diskret felsökningsstöd (inte påverka normal UX).
+
+Teknisk ändringslista (planerade filer)
+- `src/utils/healthSteps.ts`
+  - `bucket: '1day'` -> `bucket: 'day'`
+  - tydligare felhantering från `queryAggregated`
+- `src/hooks/useSteps.tsx`
+  - mappa pluginfel till tydliga svenska felorsaker i syncflödet
 - `ios/App/App/App.entitlements`
-  - minimera till HealthKit för stegscenariot
-- `src/utils/healthSteps.ts` och `src/hooks/useSteps.tsx`
-  - rikare felhantering/diagnostik
-- `src/pages/StepsPage.tsx`
-  - tydligare svenska status- och felmeddelanden + diagnostiksektion
+  - minimera till HealthKit-basnyckel
+- `ios/App/fastlane/Fastfile`
+  - ordna lane-sekvens så entitlement-check sker före upload
+- `.github/workflows/ios-testflight.yml`
+  - spegla fail-fast-sekvens och behåll `npx cap sync ios`
 
-Risker och hantering
-- Risk: Apple-kontot/app-id saknar aktiverad HealthKit-capability.
-  - Hantering: CI fail-fast med tydligt fel vid signering/entitlement-kontroll.
-- Risk: appen får “permission granted” men ingen data hittas för valt datum.
-  - Hantering: tydlig UI-återkoppling “ingen stegdata hittad” + visning av datumintervall.
-- Risk: fortfarande fel build testas lokalt.
-  - Hantering: verifiera buildnummer i appens “Om”-sektion/toast och i TestFlight.
+Vad du inte ska behöva göra manuellt efter detta
+- Ingen manuell “Product → Archive” i Xcode.
+- Ingen manuell native-synk inför varje release (CI gör `npx cap sync ios`).
+- Du behöver bara trigga workflowet; samma pipeline ska ge fungerande TestFlight/App Store-bygge för stegsynk.
+
+Verifieringsplan (end-to-end)
+1) Kör workflow och bekräfta i logg att:
+- Capacitor sync körts
+- HealthKit-entitlement hittas i signerad binär
+- upload sker först efter godkänd entitlement-check
+
+2) Installera ny TestFlight-build och testa i appen:
+- ge Health-behörighet
+- tryck “Synka steg”
+- verifiera att dagens steg visas
+- verifiera att historik + leaderboard uppdateras
+
+3) Kontroll i backend:
+- ny rad/uppdatering i `step_entries`
+- körningslogg för `sync-steps` finns
+
+Risker och hur de hanteras
+- Risk: entitlement finns men användaren har nekat läsbehörighet i Hälsa.
+  - Hantering: tydligt felmeddelande + väg till rätt inställning.
+- Risk: 0 steg idag feltolkas som fel.
+  - Hantering: behandlas som giltigt utfall (inte hårt fel).
+- Risk: CI laddar upp build trots capability-problem.
+  - Hantering: strikt fail-fast före upload.
 
 Resultat efter implementation
-- Du behöver inte köra Product → Archive manuellt i Xcode.
-- Pipeline producerar en korrekt signerad iOS-build med verifierad HealthKit-entitlement.
-- Stegsynkfel blir konkreta och felsökningsbara istället för generiska.
+- Stegsynk blir beroende av korrekt CI-build (inte lokal Xcode-archive).
+- Flödet blir enklare, mer robust och fokuserat på det du faktiskt behöver.
+- Du får en repeterbar releaseprocess där TestFlight/App Store-builden har samma förutsättningar för stegsynk.
