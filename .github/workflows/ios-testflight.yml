@@ -1,0 +1,81 @@
+name: iOS TestFlight Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      note:
+        description: 'TestFlight release note'
+        required: false
+        default: 'New build from GitHub Actions'
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Sync Capacitor
+        run: npx cap sync ios
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+          working-directory: ios/App
+
+      - name: Create Gemfile if missing
+        working-directory: ios/App
+        run: |
+          if [ ! -f Gemfile ]; then
+            echo 'source "https://rubygems.org"' > Gemfile
+            echo 'gem "fastlane"' >> Gemfile
+          fi
+          bundle install
+
+      - name: Setup keychain
+        run: |
+          security create-keychain -p "actions" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "actions" build.keychain
+          security set-keychain-settings -t 3600 -u build.keychain
+
+      - name: Decode certificate
+        run: |
+          echo "${{ secrets.DISTRIBUTION_CERTIFICATE_BASE64 }}" | base64 --decode > ios/App/fastlane/cert.p12
+
+      - name: Decode provisioning profile
+        run: |
+          echo "${{ secrets.PROVISIONING_PROFILE_BASE64 }}" | base64 --decode > ios/App/fastlane/profile.mobileprovision
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+
+      - name: Build and upload to TestFlight
+        working-directory: ios/App
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ITC_TEAM_ID: ${{ secrets.ITC_TEAM_ID }}
+          CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
+          PROVISIONING_PROFILE_NAME: ${{ secrets.PROVISIONING_PROFILE_NAME }}
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+        run: bundle exec fastlane beta
