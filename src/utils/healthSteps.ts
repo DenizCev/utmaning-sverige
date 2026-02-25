@@ -6,6 +6,20 @@ export interface HealthStepsResult {
   source: 'healthkit' | 'health_connect' | 'manual';
 }
 
+export type SyncError =
+  | 'not_native'
+  | 'health_unavailable'
+  | 'permission_denied'
+  | 'query_failed'
+  | 'server_error'
+  | 'unknown';
+
+export interface SyncFailure {
+  error: SyncError;
+  message: string;
+  details?: string;
+}
+
 export function isNativePlatform(): boolean {
   try {
     return Capacitor.isNativePlatform();
@@ -23,9 +37,6 @@ export function getPlatform(): 'ios' | 'android' | 'web' {
   return 'web';
 }
 
-/**
- * Check if the native health API is available on this device.
- */
 export async function isHealthAvailable(): Promise<boolean> {
   if (!isNativePlatform()) return false;
   try {
@@ -38,9 +49,6 @@ export async function isHealthAvailable(): Promise<boolean> {
   }
 }
 
-/**
- * Internal helper to safely read permission responses across platforms.
- */
 function hasGrantedPermission(response: unknown, key: string): boolean {
   const permissions = (response as { permissions?: unknown })?.permissions;
 
@@ -55,15 +63,10 @@ function hasGrantedPermission(response: unknown, key: string): boolean {
   return false;
 }
 
-/**
- * Check current permission status for step reading.
- * Returns true if already granted.
- */
 export async function checkHealthPermissions(): Promise<boolean> {
   if (!isNativePlatform()) return false;
 
-  // iOS does not provide a reliable read-permission status via checkHealthPermissions.
-  // Return false here so we always trigger an explicit request flow before syncing.
+  // iOS does not provide a reliable read-permission status.
   if (getPlatform() === 'ios') return false;
 
   try {
@@ -78,17 +81,12 @@ export async function checkHealthPermissions(): Promise<boolean> {
   }
 }
 
-/**
- * Request health permissions from the user.
- * This triggers the native OS permission dialog.
- */
 export async function requestHealthPermissions(): Promise<boolean> {
   if (!isNativePlatform()) return false;
   try {
     const { Health } = await import('capacitor-health');
     const platform = getPlatform();
 
-    // First check if health is available
     const available = await Health.isHealthAvailable();
     if (!available.available) {
       if (platform === 'android' && typeof Health.showHealthConnectInPlayStore === 'function') {
@@ -112,9 +110,6 @@ export async function requestHealthPermissions(): Promise<boolean> {
   }
 }
 
-/**
- * Open the native health settings so the user can manually toggle permissions.
- */
 export async function openHealthSettings(): Promise<void> {
   if (!isNativePlatform()) return;
   try {
@@ -138,17 +133,15 @@ export async function openHealthSettings(): Promise<void> {
   }
 }
 
-/**
- * Query aggregated steps for a specific date.
- */
 export async function getStepsForDate(date: string): Promise<HealthStepsResult | null> {
   if (!isNativePlatform()) return null;
   try {
     const { Health } = await import('capacitor-health');
 
-    // Build start/end for the full day
     const startDate = new Date(`${date}T00:00:00`).toISOString();
     const endDate = new Date(`${date}T23:59:59`).toISOString();
+
+    console.log('[getStepsForDate] querying', { startDate, endDate });
 
     const result = await Health.queryAggregated({
       startDate,
@@ -157,7 +150,7 @@ export async function getStepsForDate(date: string): Promise<HealthStepsResult |
       bucket: '1day',
     });
 
-    console.log('queryAggregated steps result:', JSON.stringify(result));
+    console.log('[getStepsForDate] result:', JSON.stringify(result));
 
     const totalSteps = (result?.aggregatedData ?? []).reduce((sum, s) => sum + (s.value ?? 0), 0);
     const platform = getPlatform();
@@ -168,7 +161,7 @@ export async function getStepsForDate(date: string): Promise<HealthStepsResult |
       source: platform === 'ios' ? 'healthkit' : 'health_connect',
     };
   } catch (err) {
-    console.error('getStepsForDate error:', err);
+    console.error('[getStepsForDate] error:', err);
     return null;
   }
 }

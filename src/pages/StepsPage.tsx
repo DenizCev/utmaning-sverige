@@ -1,26 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSteps } from '@/hooks/useSteps';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Footprints, Trophy, Calendar, RotateCcw, RefreshCw, Heart, Settings } from 'lucide-react';
+import { Footprints, Trophy, Calendar, RotateCcw, RefreshCw, Heart, Settings, Bug } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { CharacterAvatar } from '@/components/CharacterAvatar';
-import { Link } from 'react-router-dom';
 import StepLeaderboard from '@/components/StepLeaderboard';
 
 export default function StepsPage() {
   const { user, isAdmin } = useAuth();
   const {
     todaySteps, history, loading, syncing, isNative,
-    permissionStatus, requestPermission, openHealthSettings, syncFromHealth,
+    permissionStatus, lastSyncErrorMessage,
+    requestPermission, openHealthSettings, syncFromHealth,
+    debugInfo,
   } = useSteps();
   const { toast } = useToast();
+  const [showDebug, setShowDebug] = useState(false);
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -28,7 +28,6 @@ export default function StepsPage() {
     const granted = await requestPermission();
     if (granted) {
       toast({ title: 'Tillåtelse beviljad!', description: 'Dina steg synkas nu automatiskt.' });
-      // Auto-sync after granting
       const ok = await syncFromHealth();
       if (ok) {
         toast({ title: 'Steg synkade!', description: 'Dina steg har hämtats från hälsoappen.' });
@@ -49,7 +48,7 @@ export default function StepsPage() {
     } else {
       toast({
         title: 'Kunde inte synka',
-        description: 'Kontrollera att Kampen har tillgång i Inställningar > Hälsa > Kampen och försök igen.',
+        description: lastSyncErrorMessage || 'Kontrollera att Kampen har tillgång i Inställningar > Hälsa > Kampen och försök igen.',
         variant: 'destructive',
       });
     }
@@ -79,7 +78,7 @@ export default function StepsPage() {
         </p>
       </div>
 
-      {/* Permission banner – shown when permission is missing on native */}
+      {/* Permission banner */}
       {isNative && permissionStatus !== 'granted' && (
         <Alert className="mb-6 border-primary/30 bg-primary/5">
           <Heart className="h-5 w-5 text-primary" />
@@ -119,6 +118,14 @@ export default function StepsPage() {
         </Alert>
       )}
 
+      {/* Sync error message */}
+      {lastSyncErrorMessage && (
+        <Alert className="mb-4 border-destructive/30 bg-destructive/5">
+          <AlertDescription className="text-sm text-destructive">
+            {lastSyncErrorMessage}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {user && (
         <Card className="mb-6">
@@ -191,6 +198,35 @@ export default function StepsPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Debug panel – visible on native for troubleshooting */}
+      {isNative && (
+        <div className="mt-8">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs text-muted-foreground"
+            onClick={() => setShowDebug(!showDebug)}
+          >
+            <Bug className="h-3 w-3 mr-1" /> {showDebug ? 'Dölj' : 'Visa'} diagnostik
+          </Button>
+
+          {showDebug && (
+            <Card className="mt-2 bg-muted/50">
+              <CardContent className="pt-4 text-xs font-mono space-y-1">
+                <p>Plattform: {debugInfo.platform}</p>
+                <p>Native: {debugInfo.isNative ? 'Ja' : 'Nej'}</p>
+                <p>Behörighetsstatus: {debugInfo.permissionStatus}</p>
+                <p>Health API tillgänglig: {debugInfo.healthAvailable === null ? '...' : debugInfo.healthAvailable ? 'Ja' : 'Nej'}</p>
+                <p>Senaste synkdatum: {debugInfo.lastSyncDate}</p>
+                {debugInfo.lastSyncError && (
+                  <p className="text-destructive">Senaste fel: {debugInfo.lastSyncError}</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
     </div>
   );
 }

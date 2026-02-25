@@ -9,6 +9,7 @@ import {
   getPlatform,
   getStepsForDate,
   openHealthSettings,
+  type SyncError,
 } from '@/utils/healthSteps';
 
 export interface StepEntry {
@@ -21,6 +22,15 @@ export interface StepEntry {
 
 export type HealthPermissionStatus = 'unknown' | 'granted' | 'denied' | 'unavailable';
 
+export interface DebugInfo {
+  platform: string;
+  isNative: boolean;
+  permissionStatus: HealthPermissionStatus;
+  healthAvailable: boolean | null;
+  lastSyncError: string | null;
+  lastSyncDate: string | null;
+}
+
 export function useSteps() {
   const { user } = useAuth();
   const [todaySteps, setTodaySteps] = useState<StepEntry | null>(null);
@@ -29,10 +39,12 @@ export function useSteps() {
   const [syncing, setSyncing] = useState(false);
   const [isNative, setIsNative] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState<HealthPermissionStatus>('unknown');
+  const [lastSyncError, setLastSyncError] = useState<SyncError | null>(null);
+  const [lastSyncErrorMessage, setLastSyncErrorMessage] = useState<string | null>(null);
+  const [healthAvailable, setHealthAvailable] = useState<boolean | null>(null);
 
   const today = new Date().toISOString().split('T')[0];
 
-  // Detect native and check permission status on mount
   useEffect(() => {
     const native = isNativePlatform();
     setIsNative(native);
@@ -41,16 +53,17 @@ export function useSteps() {
       checkPermissionStatus();
     } else {
       setPermissionStatus('unavailable');
+      setHealthAvailable(false);
     }
   }, []);
 
   const checkPermissionStatus = async () => {
     const platform = getPlatform();
     const available = await isHealthAvailable();
+    setHealthAvailable(available);
     console.log('[useSteps] isHealthAvailable:', available, 'platform:', platform);
 
     if (!available && platform === 'ios') {
-      // iOS may return false before entitlement is recognised – don't block
       console.log('[useSteps] iOS reported unavailable, treating as denied so user can still try');
       setPermissionStatus('denied');
       return;
@@ -68,6 +81,10 @@ export function useSteps() {
   const requestPermission = async (): Promise<boolean> => {
     const granted = await requestHealthPermissions();
     setPermissionStatus(granted ? 'granted' : 'denied');
+    if (!granted) {
+      setLastSyncError('permission_denied');
+      setLastSyncErrorMessage('Behörighet nekades av användaren.');
+    }
     return granted;
   };
 
@@ -99,7 +116,6 @@ export function useSteps() {
     }
   }, [user, fetchToday, fetchHistory]);
 
-  // Auto-sync when permission is granted
   useEffect(() => {
     if (user && isNative && permissionStatus === 'granted') {
       syncFromHealth();
@@ -107,33 +123,50 @@ export function useSteps() {
   }, [user, isNative, permissionStatus]);
 
   const syncFromHealth = async (): Promise<boolean> => {
-    if (!user || !isNative) return false;
-    setSyncing(true);
-    try {
-      // Don't block on 'unavailable' – iOS may report false negatives
+    if (!user) {
+      setLastSyncError('unknown');
+      setLastSyncErrorMessage('Du måste vara inloggad.');
+      return false;
+    }
+    if (!isNative) {
+      setLastSyncError('not_native');
+      setLastSyncErrorMessage('Stegsynk fungerar bara i native-appen.');
+      return false;
+    }
 
+    setSyncing(true);
+    setLastSyncError(null);
+    setLastSyncErrorMessage(null);
+
+    try {
       const platform = getPlatform();
 
-      // iOS permission status checks are unreliable, so always trigger request flow before sync.
       if (platform === 'ios') {
         const granted = await requestPermission();
         if (!granted) {
+          setLastSyncError('permission_denied');
+          setLastSyncErrorMessage('Behörighet nekad. Gå till Inställningar > Hälsa > Kampen.');
           return false;
         }
       } else if (permissionStatus !== 'granted') {
         const granted = await requestPermission();
         if (!granted) {
+          setLastSyncError('permission_denied');
+          setLastSyncErrorMessage('Behörighet nekad. Öppna Health Connect-inställningar.');
           return false;
         }
       }
 
       const result = await getStepsForDate(today);
       if (!result) {
+        setLastSyncError('query_failed');
+        setLastSyncErrorMessage(`Kunde inte hämta stegdata för ${today}. Kontrollera att hälsoappen har stegdata.`);
         return false;
       }
 
-      // Still a success if we queried but got 0 steps
       if (result.steps <= 0) {
+        // Success – just no steps recorded yet
+        setLastSyncErrorMessage(null);
         return true;
       }
 
@@ -142,17 +175,30 @@ export function useSteps() {
       });
 
       if (error) {
+        setLastSyncError('server_error');
+        setLastSyncErrorMessage(`Serverfel vid sparning: ${error.message || 'okänt fel'}`);
         return false;
       }
 
       await Promise.all([fetchToday(), fetchHistory()]);
       return true;
-    } catch (err) {
+    } catch (err: any) {
       console.error('Health sync failed:', err);
+      setLastSyncError('unknown');
+      setLastSyncErrorMessage(err?.message || 'Okänt fel vid synkronisering.');
       return false;
     } finally {
       setSyncing(false);
     }
+  };
+
+  const debugInfo: DebugInfo = {
+    platform: getPlatform(),
+    isNative,
+    permissionStatus,
+    healthAvailable,
+    lastSyncError: lastSyncErrorMessage,
+    lastSyncDate: today,
   };
 
   return {
@@ -162,10 +208,13 @@ export function useSteps() {
     syncing,
     isNative,
     permissionStatus,
+    lastSyncError,
+    lastSyncErrorMessage,
     requestPermission,
     openHealthSettings,
     syncFromHealth,
     checkPermissionStatus,
+    debugInfo,
     refetch: () => { fetchToday(); fetchHistory(); },
   };
 }
