@@ -147,7 +147,7 @@ export async function getStepsForDate(date: string): Promise<HealthStepsResult |
       startDate,
       endDate,
       dataType: 'steps',
-      bucket: '1day',
+      bucket: 'day',
     });
 
     console.log('[getStepsForDate] result:', JSON.stringify(result));
@@ -160,8 +160,8 @@ export async function getStepsForDate(date: string): Promise<HealthStepsResult |
       date,
       source: platform === 'ios' ? 'healthkit' : 'health_connect',
     };
-  } catch (err) {
+  } catch (err: any) {
     console.error('[getStepsForDate] error:', err);
-    return null;
+    throw new Error(err?.message || 'Kunde inte hämta steg från hälsoappen');
   }
 }
