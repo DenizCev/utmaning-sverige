@@ -1,0 +1,63 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Build and upload to TestFlight"
+  lane :beta do
+    # Create App Store Connect API key from environment
+    api_key = app_store_connect_api_key(
+      key_id: ENV["ASC_KEY_ID"],
+      issuer_id: ENV["ASC_ISSUER_ID"],
+      key_content: ENV["ASC_KEY_CONTENT"],
+      is_key_content_base64: true,
+      in_house: false
+    )
+
+    # Install signing certificate and provisioning profile
+    install_certificate(
+      certificate_path: "fastlane/cert.p12",
+      certificate_password: ENV["CERTIFICATE_PASSWORD"],
+      keychain_name: "build.keychain",
+      keychain_password: "actions"
+    )
+
+    install_provisioning_profile(
+      path: "fastlane/profile.mobileprovision"
+    )
+
+    # Update code signing settings
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: "App.xcodeproj",
+      team_id: ENV["APPLE_TEAM_ID"],
+      bundle_identifier: "app.lovable.kampen",
+      code_sign_identity: "iPhone Distribution",
+      profile_name: ENV["PROVISIONING_PROFILE_NAME"]
+    )
+
+    # Increment build number
+    increment_build_number(
+      build_number: ENV["GITHUB_RUN_NUMBER"] || Time.now.to_i.to_s,
+      xcodeproj: "App.xcodeproj"
+    )
+
+    # Build the app
+    build_app(
+      workspace: "App.xcworkspace",
+      scheme: "App",
+      export_method: "app-store",
+      xcargs: "-allowProvisioningUpdates",
+      export_options: {
+        provisioningProfiles: {
+          "app.lovable.kampen" => ENV["PROVISIONING_PROFILE_NAME"]
+        }
+      }
+    )
+
+    # Upload to TestFlight
+    upload_to_testflight(
+      api_key: api_key,
+      skip_waiting_for_build_processing: true,
+      skip_submission: true
+    )
+  end
+end
