@@ -12,7 +12,7 @@ platform :ios do
       in_house: false
     )
 
-    # Use automatic code signing (relies on Apple Developer portal capabilities)
+    # Use automatic code signing
     update_code_signing_settings(
       use_automatic_signing: true,
       path: "App.xcodeproj",
@@ -26,7 +26,7 @@ platform :ios do
       xcodeproj: "App.xcodeproj"
     )
 
-    # Build the app
+    # Build the app (archive)
     build_app(
       workspace: "App.xcworkspace",
       scheme: "App",
@@ -38,7 +38,23 @@ platform :ios do
       }
     )
 
-    # Upload to TestFlight
+    # Verify HealthKit entitlement in the signed binary BEFORE upload
+    ipa_path = lane_context[SharedValues::IPA_OUTPUT_PATH]
+    UI.message("Verifying HealthKit entitlement in #{ipa_path}...")
+
+    Dir.mktmpdir do |tmpdir|
+      sh("unzip -o '#{ipa_path}' -d '#{tmpdir}'")
+      app_path = Dir.glob("#{tmpdir}/Payload/*.app").first
+      UI.user_error!("No .app found in IPA") unless app_path
+
+      entitlements = sh("codesign -d --entitlements - '#{app_path}' 2>/dev/null || true")
+      unless entitlements.include?("com.apple.developer.healthkit")
+        UI.user_error!("❌ HealthKit entitlement MISSING from signed binary! Aborting upload.")
+      end
+      UI.success("✅ HealthKit entitlement verified in signed binary")
+    end
+
+    # Upload to TestFlight only after verification
     upload_to_testflight(
       api_key: api_key,
       skip_waiting_for_build_processing: true,

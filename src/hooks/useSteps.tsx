@@ -157,10 +157,17 @@ export function useSteps() {
         }
       }
 
-      const result = await getStepsForDate(today);
+      let result;
+      try {
+        result = await getStepsForDate(today);
+      } catch (queryErr: any) {
+        setLastSyncError('query_failed');
+        setLastSyncErrorMessage(queryErr?.message || `Kunde inte hämta stegdata för ${today}.`);
+        return false;
+      }
       if (!result) {
         setLastSyncError('query_failed');
-        setLastSyncErrorMessage(`Kunde inte hämta stegdata för ${today}. Kontrollera att hälsoappen har stegdata.`);
+        setLastSyncErrorMessage(`Ingen stegdata hittades för ${today}.`);
         return false;
       }
 
