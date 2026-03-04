@@ -1,91 +1,71 @@
 
-Målbild
-- Göra stegsynk stabil i CI-byggd iOS-app (TestFlight/App Store) utan krav på manuell Xcode-archive.
-- Rensa bort onödig komplexitet så flödet blir: push kod → workflow bygger/signerar → stegsynk fungerar.
 
-Vad som faktiskt ser ut att vara huvudfelet just nu
-1) Kritisk kodbugg i stegsynk:
-- I `src/utils/healthSteps.ts` skickas `bucket: '1day'` till `Health.queryAggregated(...)`.
-- Pluginet (`capacitor-health`) accepterar `bucket: "day"` (inte `"1day"`), både i iOS- och Android-implementationen.
-- Detta kan ge query-fel även om entitlement/signering är korrekt, vilket matchar symptom “native build finns men synk funkar inte”.
+## Plan: Byt till `@capgo/capacitor-health` (Capacitor 8-kompatibelt)
 
-2) CI-flödet är nära rätt men inte helt “fail-fast”:
-- Workflow verifierar HealthKit-entitlement efter att fastlane-lanen redan har uploadat.
-- Det bör verifieras innan upload, så fel build aldrig skickas upp.
+### Problem
+Nuvarande `capacitor-health` (v7) stödjer inte Capacitor 8, vilket orsakar SPM-versionskonflikter vid `npx cap sync ios` och bygge i CI.
 
-3) Entitlements är inte minimala:
-- `ios/App/App/App.entitlements` innehåller extra nyckel `com.apple.developer.healthkit.access` (tom array).
-- För step read räcker `com.apple.developer.healthkit = true`; extra nyckeln kan skapa onödig friktion.
+### Lösning
+Byt till `@capgo/capacitor-health` som explicit stödjer Capacitor 8, har SPM-distribution, och erbjuder samma funktionalitet (`queryAggregated`, HealthKit, Health Connect).
 
-4) Ingen backend-data/loggar för steg:
-- Inga färska rader i `step_entries` och inga körningar för `sync-steps` hittades, vilket stärker att flödet faller redan innan server-anrop (dvs i health query/permission).
+### API-skillnader att hantera
+Det nya pluginet har ett annat API:
 
-Genomförande (fokuserat, minimalt, utan “extra saker”)
-Fas 1 — Fixa den verkliga synk-buggen
-- Ändra bucket till `day` i `getStepsForDate`.
-- Förbättra felretur från `getStepsForDate` så originalfel från plugin (t.ex. “Unsupported bucket”) bubblar upp till `useSteps` istället för att maskeras till `null`.
-- Justera felmeddelanden i `useSteps` så de blir diagnostiska men korta på svenska.
+```text
+Gammalt (capacitor-health)              Nytt (@capgo/capacitor-health)
+─────────────────────────────────────── ──────────────────────────────────────
+Health.isHealthAvailable()              Health.isAvailable()
+  → { available }                         → { available, reason }
 
-Fas 2 — Rensa iOS capability/entitlement till minsta fungerande
-- I `App.entitlements`: behåll endast HealthKit-basentitlement.
-- Säkerställ att projektets capability-konfiguration är konsekvent med detta (så CI-signering får samma resultat som manuell archive hade gett).
+Health.requestHealthPermissions(        Health.requestAuthorization(
+  { permissions: ['READ_STEPS'] })        { read: ['steps'] })
 
-Fas 3 — Göra CI verkligen självförsörjande (ingen manuell Xcode)
-- Behåll `npm run build` + `npx cap sync ios` i workflow (detta ersätter manuellt sync/prepare).
-- Flytta entitlement-verifiering till innan upload:
-  - bygg archive/ipa
-  - kontrollera signerad binär innehåller `com.apple.developer.healthkit`
-  - endast därefter upload till TestFlight
-- Behåll artifact-uppladdning för loggar så felsökning kan ske utan Xcode lokalt.
+Health.checkHealthPermissions(...)      Health.checkAuthorization(
+                                          { read: ['steps'] })
 
-Fas 4 — Förenkla och “avbrusa”
-- Ta bort/undvik överflödiga steg i workflow/lane som inte behövs för ditt mål.
-- Behålla endast nödvändigt för: signering, build, entitlement-check, upload.
-- Behålla debug-info i appen men endast som diskret felsökningsstöd (inte påverka normal UX).
+Health.queryAggregated(                 Health.queryAggregated(
+  { dataType: 'steps',                   { dataType: 'steps',
+    bucket: 'day' })                       bucket: 'day',
+  → { aggregatedData: [...] }              aggregation: 'sum' })
+                                          → { samples: [...] }
 
-Teknisk ändringslista (planerade filer)
-- `src/utils/healthSteps.ts`
-  - `bucket: '1day'` -> `bucket: 'day'`
-  - tydligare felhantering från `queryAggregated`
-- `src/hooks/useSteps.tsx`
-  - mappa pluginfel till tydliga svenska felorsaker i syncflödet
-- `ios/App/App/App.entitlements`
-  - minimera till HealthKit-basnyckel
-- `ios/App/fastlane/Fastfile`
-  - ordna lane-sekvens så entitlement-check sker före upload
-- `.github/workflows/ios-testflight.yml`
-  - spegla fail-fast-sekvens och behåll `npx cap sync ios`
+Health.openAppleHealthSettings()        (ej tillgänglig — iOS hanterar via
+                                         systeminställningar direkt)
+Health.openHealthConnectSettings()      Health.openHealthConnectSettings()
+Health.showHealthConnectInPlayStore()   (ej separat — isAvailable ger reason)
+```
 
-Vad du inte ska behöva göra manuellt efter detta
-- Ingen manuell “Product → Archive” i Xcode.
-- Ingen manuell native-synk inför varje release (CI gör `npx cap sync ios`).
-- Du behöver bara trigga workflowet; samma pipeline ska ge fungerande TestFlight/App Store-bygge för stegsynk.
+### Filer som ändras
 
-Verifieringsplan (end-to-end)
-1) Kör workflow och bekräfta i logg att:
-- Capacitor sync körts
-- HealthKit-entitlement hittas i signerad binär
-- upload sker först efter godkänd entitlement-check
+1. **`package.json`**
+   - Ta bort `"capacitor-health": "^7.0.0"`
+   - Lägg till `"@capgo/capacitor-health": "^8.0.0"`
 
-2) Installera ny TestFlight-build och testa i appen:
-- ge Health-behörighet
-- tryck “Synka steg”
-- verifiera att dagens steg visas
-- verifiera att historik + leaderboard uppdateras
+2. **`src/utils/healthSteps.ts`** — Fullständig omskrivning av alla anrop:
+   - `import { Health } from '@capgo/capacitor-health'`
+   - `isHealthAvailable()` → `Health.isAvailable()`
+   - `requestHealthPermissions()` → `Health.requestAuthorization({ read: ['steps'] })`
+   - `checkHealthPermissions()` → `Health.checkAuthorization({ read: ['steps'] })`
+   - `getStepsForDate()` → `Health.queryAggregated({ ..., aggregation: 'sum' })` med `result.samples` istället för `result.aggregatedData`
+   - `openHealthSettings()` → `Health.openHealthConnectSettings()` (Android), ta bort iOS-specifik `openAppleHealthSettings`
 
-3) Kontroll i backend:
-- ny rad/uppdatering i `step_entries`
-- körningslogg för `sync-steps` finns
+3. **`ios/App/App/App.entitlements`** — Behåll som den är (bara `com.apple.developer.healthkit = true`)
 
-Risker och hur de hanteras
-- Risk: entitlement finns men användaren har nekat läsbehörighet i Hälsa.
-  - Hantering: tydligt felmeddelande + väg till rätt inställning.
-- Risk: 0 steg idag feltolkas som fel.
-  - Hantering: behandlas som giltigt utfall (inte hårt fel).
-- Risk: CI laddar upp build trots capability-problem.
-  - Hantering: strikt fail-fast före upload.
+4. **`ios/App/fastlane/Fastfile`** — Behåll `project: "App.xcodeproj"` (redan korrekt)
 
-Resultat efter implementation
-- Stegsynk blir beroende av korrekt CI-build (inte lokal Xcode-archive).
-- Flödet blir enklare, mer robust och fokuserat på det du faktiskt behöver.
-- Du får en repeterbar releaseprocess där TestFlight/App Store-builden har samma förutsättningar för stegsynk.
+5. **`.github/workflows/ios-testflight.yml`** — Inga ändringar behövs (redan har `npx cap sync ios` och entitlement-verifiering)
+
+### Vad som INTE ändras
+- `useSteps.tsx` — Behöver inga ändringar, den anropar bara funktionerna i `healthSteps.ts`
+- `StepsPage.tsx` — Behöver inga ändringar
+- Fastfile och CI-workflow — Redan korrekt konfigurerade
+- HealthKit entitlements och Info.plist — Redan korrekt
+
+### Efter implementation
+Du behöver köra lokalt:
+1. `git pull`
+2. `npm install` (installerar nya pluginet, tar bort gamla)
+3. `npm run build`
+4. `npx cap sync ios` (synkar nya SPM-paketet)
+5. `git push` → trigga GitHub Actions workflow
+
