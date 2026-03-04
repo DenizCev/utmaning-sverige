@@ -25,19 +25,21 @@ platform :ios do
       build_number: ENV["GITHUB_RUN_NUMBER"] || Time.now.to_i.to_s,
       xcodeproj: "App.xcodeproj"
     )
-
+ENV["FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT"] = "30"
+ENV["FASTLANE_XCODEBUILD_SETTINGS_RETRIES"] = "3"
     # Build the app (archive)
     build_app(
-      project: "App.xcodeproj",
-      scheme: "App",
-      export_method: "app-store",
-      xcargs: "-allowProvisioningUpdates -sdk iphoneos",
-      destination: "platform=iOS,name=Any iOS Device",
-      export_options: {
-        signingStyle: "automatic",
-        teamID: ENV["APPLE_TEAM_ID"]
-      }
-    )
+  project: "App.xcodeproj",
+  scheme: "App",
+  export_method: "app-store",
+  sdk: "iphoneos",                      # explicit iOS SDK
+  destination: "generic/platform=iOS",  # stabil CI-destination
+  xcargs: "-allowProvisioningUpdates",
+  export_options: {
+    signingStyle: "automatic",
+    teamID: ENV["APPLE_TEAM_ID"]
+  }
+)
 
     # Verify HealthKit entitlement in the signed binary BEFORE upload
     ipa_path = lane_context[SharedValues::IPA_OUTPUT_PATH]
