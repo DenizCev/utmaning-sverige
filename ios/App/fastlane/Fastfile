@@ -33,7 +33,8 @@ build_app(
   project: "App.xcodeproj",
   scheme: "App",
   export_method: "app-store",
-  destination: "platform=iOS,name=iPhone 14",  # stabil CI-destination
+  sdk: "iphoneos",       # behåll, det anger riktiga devices
+  destination: "generic/platform=iOS",  # ändra här från iPhone 14
   xcargs: "-allowProvisioningUpdates",
   export_options: {
     signingStyle: "automatic",
