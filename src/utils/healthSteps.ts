@@ -40,27 +40,13 @@ export function getPlatform(): 'ios' | 'android' | 'web' {
 export async function isHealthAvailable(): Promise<boolean> {
   if (!isNativePlatform()) return false;
   try {
-    const { Health } = await import('capacitor-health');
-    const result = await Health.isHealthAvailable();
+    const { Health } = await import('@capgo/capacitor-health');
+    const result = await Health.isAvailable();
     return result.available;
   } catch (err) {
     console.error('isHealthAvailable error:', err);
     return false;
   }
-}
-
-function hasGrantedPermission(response: unknown, key: string): boolean {
-  const permissions = (response as { permissions?: unknown })?.permissions;
-
-  if (Array.isArray(permissions)) {
-    return permissions.some((entry) => (entry as Record<string, boolean> | undefined)?.[key] === true);
-  }
-
-  if (permissions && typeof permissions === 'object') {
-    return Boolean((permissions as Record<string, boolean>)[key]);
-  }
-
-  return false;
 }
 
 export async function checkHealthPermissions(): Promise<boolean> {
@@ -70,11 +56,19 @@ export async function checkHealthPermissions(): Promise<boolean> {
   if (getPlatform() === 'ios') return false;
 
   try {
-    const { Health } = await import('capacitor-health');
-    const result = await Health.checkHealthPermissions({
-      permissions: ['READ_STEPS'],
+    const { Health } = await import('@capgo/capacitor-health');
+    const result = await Health.checkAuthorization({
+      read: ['steps'],
     });
-    return hasGrantedPermission(result, 'READ_STEPS');
+    // The plugin returns status per type; treat any truthy value as granted.
+    const statuses = (result as any)?.permissions ?? result;
+    if (Array.isArray(statuses)) {
+      return statuses.some((s: any) => s?.steps === true || s === 'granted');
+    }
+    if (statuses && typeof statuses === 'object') {
+      return Boolean((statuses as Record<string, boolean>).steps);
+    }
+    return false;
   } catch (err) {
     console.error('checkHealthPermissions error:', err);
     return false;
@@ -84,25 +78,23 @@ export async function checkHealthPermissions(): Promise<boolean> {
 export async function requestHealthPermissions(): Promise<boolean> {
   if (!isNativePlatform()) return false;
   try {
-    const { Health } = await import('capacitor-health');
+    const { Health } = await import('@capgo/capacitor-health');
     const platform = getPlatform();
 
-    const available = await Health.isHealthAvailable();
+    const available = await Health.isAvailable();
     if (!available.available) {
-      if (platform === 'android' && typeof Health.showHealthConnectInPlayStore === 'function') {
-        await Health.showHealthConnectInPlayStore();
-      }
-      console.warn('Health API not available on this device');
+      console.warn('Health API not available on this device, reason:', (available as any).reason);
       return false;
     }
 
-    const result = await Health.requestHealthPermissions({
-      permissions: ['READ_STEPS'],
+    await Health.requestAuthorization({
+      read: ['steps'],
+      write: [],
     });
 
     // iOS reports this optimistically for read permissions.
-    const granted = platform === 'ios' ? true : hasGrantedPermission(result, 'READ_STEPS');
-    console.log('Health permission result:', JSON.stringify(result), 'granted:', granted);
+    const granted = platform === 'ios' ? true : await checkHealthPermissions();
+    console.log('Health permission granted:', granted);
     return granted;
   } catch (err) {
     console.error('requestHealthPermissions error:', err);
@@ -113,21 +105,13 @@ export async function requestHealthPermissions(): Promise<boolean> {
 export async function openHealthSettings(): Promise<void> {
   if (!isNativePlatform()) return;
   try {
-    const { Health } = await import('capacitor-health');
     const platform = getPlatform();
-    if (platform === 'ios') {
-      await Health.openAppleHealthSettings();
-      return;
-    }
-
     if (platform === 'android') {
-      const available = await Health.isHealthAvailable();
-      if (available.available) {
-        await Health.openHealthConnectSettings();
-      } else if (typeof Health.showHealthConnectInPlayStore === 'function') {
-        await Health.showHealthConnectInPlayStore();
-      }
+      const { Health } = await import('@capgo/capacitor-health');
+      await Health.openHealthConnectSettings();
     }
+    // On iOS there is no direct API to open Health settings;
+    // the user must navigate there manually via Settings > Health.
   } catch (err) {
     console.error('openHealthSettings error:', err);
   }
@@ -136,7 +120,7 @@ export async function openHealthSettings(): Promise<void> {
 export async function getStepsForDate(date: string): Promise<HealthStepsResult | null> {
   if (!isNativePlatform()) return null;
   try {
-    const { Health } = await import('capacitor-health');
+    const { Health } = await import('@capgo/capacitor-health');
 
     const startDate = new Date(`${date}T00:00:00`).toISOString();
     const endDate = new Date(`${date}T23:59:59`).toISOString();
@@ -148,11 +132,17 @@ export async function getStepsForDate(date: string): Promise<HealthStepsResult |
       endDate,
       dataType: 'steps',
       bucket: 'day',
+      aggregation: 'sum',
     });
 
     console.log('[getStepsForDate] result:', JSON.stringify(result));
 
-    const totalSteps = (result?.aggregatedData ?? []).reduce((sum, s) => sum + (s.value ?? 0), 0);
+    // @capgo/capacitor-health returns { samples: [...] }
+    const samples = (result as any)?.samples ?? (result as any)?.aggregatedData ?? [];
+    const totalSteps = Array.isArray(samples)
+      ? samples.reduce((sum: number, s: any) => sum + (s.value ?? 0), 0)
+      : 0;
+
     const platform = getPlatform();
 
     return {
