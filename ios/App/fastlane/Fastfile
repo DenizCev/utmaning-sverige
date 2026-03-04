@@ -3,7 +3,7 @@ default_platform(:ios)
 platform :ios do
   desc "Build and upload to TestFlight"
   lane :beta do
-    # Create App Store Connect API key from environment
+    # 1. Create App Store Connect API key from environment
     api_key = app_store_connect_api_key(
       key_id: ENV["ASC_KEY_ID"],
       issuer_id: ENV["ASC_ISSUER_ID"],
@@ -12,7 +12,7 @@ platform :ios do
       in_house: false
     )
 
-    # Use automatic code signing
+    # 2. Use automatic code signing
     update_code_signing_settings(
       use_automatic_signing: true,
       path: "App.xcodeproj",
@@ -20,38 +20,39 @@ platform :ios do
       bundle_identifier: "app.lovable.kampen"
     )
 
-    # Increment build number
+    # 3. Increment build number
     increment_build_number(
       build_number: ENV["GITHUB_RUN_NUMBER"] || Time.now.to_i.to_s,
       xcodeproj: "App.xcodeproj"
     )
-# 4. Match – lägg in här
-  match(
-    type: "appstore",
-    readonly: true,
-    app_identifier: "app.lovable.kampen",
-    team_id: ENV["APPLE_TEAM_ID"],
-    api_key: api_key
-  )
 
-    # CI settings
+    # 4. Match – hantera provisioning profiles
+    match(
+      type: "appstore",
+      readonly: true,
+      app_identifier: "app.lovable.kampen",
+      team_id: ENV["APPLE_TEAM_ID"],
+      api_key: api_key
+    )
+
+    # 5. CI settings
     ENV["FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT"] = "30"
     ENV["FASTLANE_XCODEBUILD_SETTINGS_RETRIES"] = "3"
 
-  # Build the app (archive) – GitHub Actions friendly
-build_app(
-  project: "App.xcodeproj",
-  scheme: "App",
-  xcargs: "-allowProvisioningUpdates",
-  export_method: "app-store",
-  export_options: {
-    provisioningProfiles: {
-      "app.lovable.kampen" => "match AppStore app.lovable.kampen"
-    }
-  }
-)
+    # 6. Build the app (archive) – GitHub Actions friendly
+    build_app(
+      project: "App.xcodeproj",
+      scheme: "App",
+      xcargs: "-allowProvisioningUpdates",
+      export_method: "app-store",
+      export_options: {
+        provisioningProfiles: {
+          "app.lovable.kampen" => "match AppStore app.lovable.kampen"
+        }
+      }
+    )
 
-    # Verify HealthKit entitlement in the signed binary BEFORE upload
+    # 7. Verify HealthKit entitlement in the signed binary BEFORE upload
     ipa_path = lane_context[SharedValues::IPA_OUTPUT_PATH]
     UI.message("Verifying HealthKit entitlement in #{ipa_path}...")
 
@@ -67,9 +68,9 @@ build_app(
       UI.success("✅ HealthKit entitlement verified in signed binary")
     end
 
-    # Upload to TestFlight only after verification
+    # 8. Upload to TestFlight only after verification
     upload_to_testflight(
-      api_key: api_key,                       # här används API-nyckeln korrekt
+      api_key: api_key,
       skip_waiting_for_build_processing: true,
       skip_submission: true
     )
