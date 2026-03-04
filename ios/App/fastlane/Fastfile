@@ -25,23 +25,24 @@ platform :ios do
       build_number: ENV["GITHUB_RUN_NUMBER"] || Time.now.to_i.to_s,
       xcodeproj: "App.xcodeproj"
     )
-ENV["FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT"] = "30"
-ENV["FASTLANE_XCODEBUILD_SETTINGS_RETRIES"] = "3"
 
-# Build the app (archive)
-build_app(
-  project: "App.xcodeproj",
-  scheme: "App",
-  export_method: "app-store",
-  sdk: "iphoneos",       # behåll, det anger riktiga devices
-  destination: "generic/platform=iOS",  # ändra här från iPhone 14
-  xcargs: "-allowProvisioningUpdates",
-  export_options: {
-    signingStyle: "automatic",
-    teamID: ENV["APPLE_TEAM_ID"]
-  },
-app_store_connect_api_key: api_key
-)
+    # CI settings
+    ENV["FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT"] = "30"
+    ENV["FASTLANE_XCODEBUILD_SETTINGS_RETRIES"] = "3"
+
+    # Build the app (archive)
+    build_app(
+      project: "App.xcodeproj",
+      scheme: "App",
+      export_method: "app-store",
+      sdk: "iphoneos",                # riktiga devices
+      destination: "generic/platform=iOS",
+      xcargs: "-allowProvisioningUpdates",
+      export_options: {
+        signingStyle: "automatic",
+        teamID: ENV["APPLE_TEAM_ID"]
+      }
+    )
 
     # Verify HealthKit entitlement in the signed binary BEFORE upload
     ipa_path = lane_context[SharedValues::IPA_OUTPUT_PATH]
@@ -61,7 +62,7 @@ app_store_connect_api_key: api_key
 
     # Upload to TestFlight only after verification
     upload_to_testflight(
-      api_key: api_key,
+      api_key: api_key,                       # här används API-nyckeln korrekt
       skip_waiting_for_build_processing: true,
       skip_submission: true
     )
