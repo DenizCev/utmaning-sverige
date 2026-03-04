@@ -30,11 +30,10 @@ platform :ios do
     ENV["FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT"] = "30"
     ENV["FASTLANE_XCODEBUILD_SETTINGS_RETRIES"] = "3"
 
-    # Build the app (archive)
-    build_app(
+  # Build the app (archive) – GitHub Actions friendly
+build_app(
   project: "App.xcodeproj",
   scheme: "App",
-  sdk: "iphoneos",
   xcargs: "-allowProvisioningUpdates",
   export_method: "app-store",
   export_options: {
