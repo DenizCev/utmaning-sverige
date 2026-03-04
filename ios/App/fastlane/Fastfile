@@ -39,7 +39,7 @@ build_app(
   export_options: {
     signingStyle: "automatic",
     teamID: ENV["APPLE_TEAM_ID"]
-  }
+  },
 app_store_connect_api_key: api_key
 )
 
