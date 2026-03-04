@@ -25,6 +25,14 @@ platform :ios do
       build_number: ENV["GITHUB_RUN_NUMBER"] || Time.now.to_i.to_s,
       xcodeproj: "App.xcodeproj"
     )
+# 4. Match – lägg in här
+  match(
+    type: "appstore",
+    readonly: true,
+    app_identifier: "app.lovable.kampen",
+    team_id: ENV["APPLE_TEAM_ID"],
+    api_key: api_key
+  )
 
     # CI settings
     ENV["FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT"] = "30"
@@ -37,8 +45,9 @@ build_app(
   xcargs: "-allowProvisioningUpdates",
   export_method: "app-store",
   export_options: {
-    signingStyle: "automatic",
-    teamID: ENV["APPLE_TEAM_ID"]
+    provisioningProfiles: {
+      "app.lovable.kampen" => "match AppStore app.lovable.kampen"
+    }
   }
 )
 
