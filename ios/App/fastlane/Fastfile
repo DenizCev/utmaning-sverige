@@ -32,17 +32,16 @@ platform :ios do
 
     # Build the app (archive)
     build_app(
-      project: "App.xcodeproj",
-      scheme: "App",
-      export_method: "app-store",
-      sdk: "iphoneos",                # riktiga devices
-      destination: "generic/platform=iOS",
-      xcargs: "-allowProvisioningUpdates",
-      export_options: {
-        signingStyle: "automatic",
-        teamID: ENV["APPLE_TEAM_ID"]
-      }
-    )
+  project: "App.xcodeproj",
+  scheme: "App",
+  sdk: "iphoneos",
+  xcargs: "-allowProvisioningUpdates",
+  export_method: "app-store",
+  export_options: {
+    signingStyle: "automatic",
+    teamID: ENV["APPLE_TEAM_ID"]
+  }
+)
 
     # Verify HealthKit entitlement in the signed binary BEFORE upload
     ipa_path = lane_context[SharedValues::IPA_OUTPUT_PATH]
