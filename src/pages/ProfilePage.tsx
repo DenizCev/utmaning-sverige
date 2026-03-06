@@ -35,6 +35,9 @@ export default function ProfilePage() {
   const [stats, setStats] = useState({ competitions: 0, challenges: 0, points: 0 });
   const [history, setHistory] = useState<any[]>([]);
   const [adDialogOpen, setAdDialogOpen] = useState(false);
+  const [deleteEmail, setDeleteEmail] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const { signOut } = useAuth();
 
   useEffect(() => {
     if (!user) { navigate('/auth'); return; }
