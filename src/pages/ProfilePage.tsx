@@ -16,7 +16,8 @@ import { StreakDisplay } from '@/components/StreakDisplay';
 import { RankBadge } from '@/components/RankBadge';
 import { SkinShop } from '@/components/SkinShop';
 import { RewardedAdDialog } from '@/components/RewardedAdDialog';
-import { Camera, Save, Trophy, Loader2, Diamond, Eye } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Camera, Save, Trophy, Loader2, Diamond, Eye, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
