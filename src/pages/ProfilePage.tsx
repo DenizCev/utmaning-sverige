@@ -191,7 +191,7 @@ export default function ProfilePage() {
       <h2 className="text-xl font-display font-bold mb-4 flex items-center gap-2">
         <Trophy className="h-5 w-5 text-sweden-gold" /> Statistik
       </h2>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-4 mb-8">
         {[
           { label: 'Tävlingar', value: stats.competitions },
           { label: 'Utmaningar', value: stats.challenges },
@@ -205,6 +205,66 @@ export default function ProfilePage() {
           </Card>
         ))}
       </div>
+
+      {/* Radera konto */}
+      <Card className="mb-6 border-destructive/30">
+        <CardContent className="pt-6">
+          <h2 className="text-xl font-display font-bold mb-2 text-destructive">Radera konto</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Om du raderar ditt konto försvinner all din data permanent. Detta kan inte ångras.
+          </p>
+          <AlertDialog onOpenChange={(open) => { if (!open) setDeleteEmail(''); }}>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive">
+                <Trash2 className="h-4 w-4 mr-2" /> Radera mitt konto
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Är du säker?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Detta kommer att permanent radera ditt konto och all tillhörande data. Skriv in din e-postadress för att bekräfta.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <Input
+                placeholder="Skriv din e-postadress"
+                value={deleteEmail}
+                onChange={(e) => setDeleteEmail(e.target.value)}
+              />
+              <AlertDialogFooter>
+                <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                <Button
+                  variant="destructive"
+                  disabled={deleteEmail.toLowerCase() !== (user.email?.toLowerCase() || '') || deleting}
+                  onClick={async () => {
+                    setDeleting(true);
+                    try {
+                      const { data: { session } } = await supabase.auth.getSession();
+                      const res = await supabase.functions.invoke('delete-account', {
+                        body: { email: deleteEmail },
+                      });
+                      if (res.error || res.data?.error) {
+                        toast.error(res.data?.error || 'Kunde inte radera kontot');
+                        setDeleting(false);
+                        return;
+                      }
+                      toast.success('Ditt konto har raderats');
+                      await signOut();
+                      navigate('/auth');
+                    } catch {
+                      toast.error('Något gick fel');
+                      setDeleting(false);
+                    }
+                  }}
+                >
+                  {deleting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                  Radera permanent
+                </Button>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </CardContent>
+      </Card>
     </div>
   );
 }
