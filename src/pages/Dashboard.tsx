@@ -56,6 +56,7 @@ export default function Dashboard() {
 
   const fetchCompetition = async () => {
     setLoading(true);
+    let comp: any = null;
     // If comp query param is set, fetch that specific competition
     if (compParam) {
       const { data: specificComp } = await (supabase.from('competitions') as any)
