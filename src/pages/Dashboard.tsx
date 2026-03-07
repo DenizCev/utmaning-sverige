@@ -38,6 +38,8 @@ interface Challenge {
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const compParam = searchParams.get('comp');
   const { diamonds, dailyAds, dailyShares, rulesAccepted, watchAd, spendDiamonds } = useDiamonds();
   const { branding } = useAppSettings();
   const [competition, setCompetition] = useState<Competition | null>(null);
@@ -49,7 +51,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [competitionStarted, setCompetitionStarted] = useState(false);
   const [adDialogOpen, setAdDialogOpen] = useState(false);
-  useEffect(() => { fetchCompetition(); }, [user]);
+  useEffect(() => { fetchCompetition(); }, [user, compParam]);
 
 
   const fetchCompetition = async () => {
