@@ -250,7 +250,7 @@ export default function CompetitionsPage() {
               </Button>
             </Link>
             {started && joined && (
-              <Link to="/">
+              <Link to={`/?comp=${comp.id}`}>
                 <Button variant="outline" size="sm">
                   <Zap className="h-4 w-4 mr-1" /> Utmaningar
                 </Button>
