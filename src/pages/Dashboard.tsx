@@ -56,20 +56,31 @@ export default function Dashboard() {
 
   const fetchCompetition = async () => {
     setLoading(true);
-    let { data: comp } = await (supabase.from('competitions') as any)
-      .select('*')
-      .eq('is_active', true)
-      .order('start_time', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (!comp) {
-      const { data: upcoming } = await (supabase.from('competitions') as any)
+    // If comp query param is set, fetch that specific competition
+    if (compParam) {
+      const { data: specificComp } = await (supabase.from('competitions') as any)
         .select('*')
+        .eq('id', compParam)
+        .maybeSingle();
+      comp = specificComp;
+    } else {
+      // Default: fetch latest active competition
+      const { data: activeComp } = await (supabase.from('competitions') as any)
+        .select('*')
+        .eq('is_active', true)
         .order('start_time', { ascending: false })
         .limit(1)
         .maybeSingle();
-      comp = upcoming;
+      comp = activeComp;
+
+      if (!comp) {
+        const { data: upcoming } = await (supabase.from('competitions') as any)
+          .select('*')
+          .order('start_time', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        comp = upcoming;
+      }
     }
 
     if (comp) {
