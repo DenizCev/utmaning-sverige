@@ -51,5 +51,9 @@
 	<string>Kampen behöver tillgång till Apple Hälsa för att läsa dina steg och visa dem i tävlingen.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Kampen använder Apple Hälsa för att synka stegdata.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Appen behöver tillgång till kameran så att du kan ta ett foto eller video direkt under utmaningarna, till exempel för att ladda upp bevis på din prestation (som en bild av en sten eller en video av din tid) eller för att uppdatera din profilbild.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Appen behöver tillgång till dina foton så att du kan välja en bild eller video från ditt bibliotek, till exempel för att ladda upp bevis på en utmaning eller sätta som profilbild.</string>
 </dict>
 </plist>
