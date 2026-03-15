@@ -293,7 +293,7 @@ export default function AdminPage() {
                     <div className="min-w-0">
                       <p className="font-semibold truncate">{c.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        Start: {new Date(c.start_time).toLocaleString('sv-SE')} · {c.entry_diamonds || 0} 💎
+                        Start: {new Date(c.start_time).toLocaleString('sv-SE')} · {c.entry_diamonds || 0} 💎 · <Users className="inline h-3.5 w-3.5" /> {memberCounts[c.id] || 0} anmälda
                         {c.end_time && ` · Avslutad: ${new Date(c.end_time).toLocaleDateString('sv-SE')}`}
                       </p>
                     </div>
