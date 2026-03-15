@@ -73,23 +73,11 @@ export default function ChallengePage() {
         fileUrl = urlData.publicUrl;
       }
 
-      // Get geolocation if available
-      let lat: number | undefined, lng: number | undefined;
-      try {
-        const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
-        });
-        lat = pos.coords.latitude;
-        lng = pos.coords.longitude;
-      } catch {}
-
       const { error } = await supabase.from('submissions').insert({
         challenge_id: challenge.id,
         user_id: user.id,
         file_url: fileUrl,
         text_content: challenge.proof_type === 'text' ? textContent : null,
-        latitude: lat,
-        longitude: lng,
       });
 
       if (error) throw error;
