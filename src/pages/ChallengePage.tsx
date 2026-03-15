@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Camera, Video, FileText, Upload, Clock, MapPin, ArrowLeft, Loader2, Smartphone } from 'lucide-react';
+import { Camera, Video, FileText, Upload, Clock, ArrowLeft, Loader2, Smartphone } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ChallengePage() {
