@@ -238,7 +238,7 @@ export default function AdminPage() {
           <TabsTrigger value="challenges">Utmaningar {selectedCompId && `(${competitions.find(c => c.id === selectedCompId)?.name || ''})`}</TabsTrigger>
           <TabsTrigger value="participants">Deltagare</TabsTrigger>
           <TabsTrigger value="submissions">Inlämningar</TabsTrigger>
-          <TabsTrigger value="users"><UsersIcon className="h-4 w-4 mr-1" /> Alla användare</TabsTrigger>
+          <TabsTrigger value="users"><Users className="h-4 w-4 mr-1" /> Alla användare</TabsTrigger>
           <TabsTrigger value="teams"><UsersRound className="h-4 w-4 mr-1" /> Alla lag</TabsTrigger>
           <TabsTrigger value="admins">Admins</TabsTrigger>
           <TabsTrigger value="rules"><ScrollText className="h-4 w-4 mr-1" /> Regler</TabsTrigger>
