@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Camera, Video, FileText, Upload, Clock, MapPin, ArrowLeft, Loader2, Smartphone } from 'lucide-react';
+import { Camera, Video, FileText, Upload, Clock, ArrowLeft, Loader2, Smartphone } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ChallengePage() {
@@ -29,6 +29,14 @@ export default function ChallengePage() {
     if (!id) return;
     fetchData();
   }, [id, user]);
+
+  useEffect(() => {
+    if (challenge && challenge.proof_type !== 'text') {
+      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        .then(stream => stream.getTracks().forEach(t => t.stop()))
+        .catch(() => {});
+    }
+  }, [challenge]);
 
   const fetchData = async () => {
     const { data: ch } = await supabase.from('challenges').select('*').eq('id', id).maybeSingle();
@@ -65,23 +73,11 @@ export default function ChallengePage() {
         fileUrl = urlData.publicUrl;
       }
 
-      // Get geolocation if available
-      let lat: number | undefined, lng: number | undefined;
-      try {
-        const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
-        });
-        lat = pos.coords.latitude;
-        lng = pos.coords.longitude;
-      } catch {}
-
       const { error } = await supabase.from('submissions').insert({
         challenge_id: challenge.id,
         user_id: user.id,
         file_url: fileUrl,
         text_content: challenge.proof_type === 'text' ? textContent : null,
-        latitude: lat,
-        longitude: lng,
       });
 
       if (error) throw error;
@@ -180,7 +176,6 @@ export default function ChallengePage() {
 
               <div className="flex items-center gap-4 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> Tidsstämpel sparas automatiskt</span>
-                <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> Plats sparas om tillåtet</span>
               </div>
 
               <Button

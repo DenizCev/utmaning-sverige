@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Trophy, Users, Zap, ChevronRight, CheckCircle2, Lock, Diamond, Eye, Gift } from 'lucide-react';
 import { toast } from 'sonner';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 interface Competition {
   id: string;
@@ -38,6 +38,8 @@ interface Challenge {
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const compParam = searchParams.get('comp');
   const { diamonds, dailyAds, dailyShares, rulesAccepted, watchAd, spendDiamonds } = useDiamonds();
   const { branding } = useAppSettings();
   const [competition, setCompetition] = useState<Competition | null>(null);
@@ -49,25 +51,37 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [competitionStarted, setCompetitionStarted] = useState(false);
   const [adDialogOpen, setAdDialogOpen] = useState(false);
-  useEffect(() => { fetchCompetition(); }, [user]);
+  useEffect(() => { fetchCompetition(); }, [user, compParam]);
 
 
   const fetchCompetition = async () => {
     setLoading(true);
-    let { data: comp } = await (supabase.from('competitions') as any)
-      .select('*')
-      .eq('is_active', true)
-      .order('start_time', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (!comp) {
-      const { data: upcoming } = await (supabase.from('competitions') as any)
+    let comp: any = null;
+    // If comp query param is set, fetch that specific competition
+    if (compParam) {
+      const { data: specificComp } = await (supabase.from('competitions') as any)
         .select('*')
+        .eq('id', compParam)
+        .maybeSingle();
+      comp = specificComp;
+    } else {
+      // Default: fetch latest active competition
+      const { data: activeComp } = await (supabase.from('competitions') as any)
+        .select('*')
+        .eq('is_active', true)
         .order('start_time', { ascending: false })
         .limit(1)
         .maybeSingle();
-      comp = upcoming;
+      comp = activeComp;
+
+      if (!comp) {
+        const { data: upcoming } = await (supabase.from('competitions') as any)
+          .select('*')
+          .order('start_time', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        comp = upcoming;
+      }
     }
 
     if (comp) {

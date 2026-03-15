@@ -71,6 +71,16 @@ export default function RulesPage() {
         <h1 className="text-3xl font-display font-bold">Regler</h1>
       </div>
 
+      <Card className="mb-6 border-muted">
+        <CardContent className="pt-6">
+          <h2 className="text-xl font-display font-bold mb-2">Apple-disclaimer / Viktig information</h2>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Apple är inte sponsor för denna tävling och är på inget sätt involverad i tävlingen, administrationen eller utdelningen av priser. Alla frågor, kommentarer eller klagomål kring tävlingen ska riktas till{' '}
+            <a href="mailto:sverigekampen@gmail.com" className="text-primary underline">sverigekampen@gmail.com</a>, och inte till Apple.
+          </p>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardContent className="pt-6 prose prose-sm max-w-none dark:prose-invert">
           {sections.map((section, i) => (

@@ -3,7 +3,7 @@ default_platform(:ios)
 platform :ios do
   desc "Build and upload to TestFlight"
   lane :beta do
-    # Create App Store Connect API key from environment
+    # Skapa App Store Connect API key från environment
     api_key = app_store_connect_api_key(
       key_id: ENV["ASC_KEY_ID"],
       issuer_id: ENV["ASC_ISSUER_ID"],
@@ -12,7 +12,7 @@ platform :ios do
       in_house: false
     )
 
-    # Use automatic code signing
+    # Automatisk code signing
     update_code_signing_settings(
       use_automatic_signing: true,
       path: "App.xcodeproj",
@@ -20,25 +20,32 @@ platform :ios do
       bundle_identifier: "app.lovable.kampen"
     )
 
-    # Increment build number
+    # Öka build number automatiskt
     increment_build_number(
       build_number: ENV["GITHUB_RUN_NUMBER"] || Time.now.to_i.to_s,
       xcodeproj: "App.xcodeproj"
     )
 
-    # Build the app (archive)
+    # CI settings (för att undvika timeout)
+    ENV["FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT"] = "30"
+    ENV["FASTLANE_XCODEBUILD_SETTINGS_RETRIES"] = "3"
+
+    # Bygg appen
     build_app(
       project: "App.xcodeproj",
       scheme: "App",
-      export_method: "app-store",
       xcargs: "-allowProvisioningUpdates",
+      export_method: "app-store",
       export_options: {
         signingStyle: "automatic",
-        teamID: ENV["APPLE_TEAM_ID"]
+        teamID: ENV["APPLE_TEAM_ID"],
+        provisioningProfiles: {
+          "app.lovable.kampen" => "Automatic"
+        }
       }
     )
 
-    # Verify HealthKit entitlement in the signed binary BEFORE upload
+    # Kontrollera HealthKit entitlement
     ipa_path = lane_context[SharedValues::IPA_OUTPUT_PATH]
     UI.message("Verifying HealthKit entitlement in #{ipa_path}...")
 
@@ -54,9 +61,9 @@ platform :ios do
       UI.success("✅ HealthKit entitlement verified in signed binary")
     end
 
-    # Upload to TestFlight only after verification
+    # Ladda upp till TestFlight
     upload_to_testflight(
-      api_key: api_key,
+      api_key: api_key,                       # använder API-nyckeln
       skip_waiting_for_build_processing: true,
       skip_submission: true
     )
