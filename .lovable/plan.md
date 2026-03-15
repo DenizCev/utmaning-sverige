@@ -1,18 +1,24 @@
 
 
-## Plan: Uppgradera CI till macOS 26 + Xcode 26
-
-### Bakgrund
-GitHub Actions har `macos-26` runners med Xcode 26.2 som default. Detta säkerställer att appen byggs med iOS 26 SDK, vilket App Store kräver.
+## Plan: Ta bort plats, behåll kamera + mikrofon
 
 ### Ändringar
 
-**1. `.github/workflows/ios-testflight.yml`**
-- `runs-on: macos-14` → `runs-on: macos-26`
-- Ta bort steget "Select Xcode" helt (Xcode 26.2 är default på macos-26)
+**1. `src/pages/ChallengePage.tsx`**
+- Ändra proaktiv permission-prompt (rad 35) från `{ video: true }` till `{ video: true, audio: true }` så att både kamera och mikrofon frågas om direkt
+- Ta bort hela geolocation-blocket (rad 76–84)
+- Ta bort `latitude`/`longitude` från insert-anropet (rad 91–92)
+- Ta bort `MapPin`-import och plats-texten i UI:t (rad 191)
+- Ta bort oanvända imports (`MapPin`)
 
-**2. `ios/App/App.xcodeproj/project.pbxproj`**
-- Uppdatera `IPHONEOS_DEPLOYMENT_TARGET` från `15.0` till `16.0` i alla build configurations (4 ställen: Debug/Release för projekt + target). iOS 16 är minimikravet för Xcode 26.
+**2. `ios/App/App/Info.plist`**
+- Ta bort `NSLocationWhenInUseUsageDescription` (om den finns)
+- Behåll `NSCameraUsageDescription` och `NSPhotoLibraryUsageDescription` (redan korrekta)
+- Behåll `NSMicrophoneUsageDescription` (redan tillagd)
 
-Det är allt som behövs. Fastfile, entitlements och resten förblir oförändrade.
+**3. `android/app/src/main/AndroidManifest.xml`**
+- Ta bort `ACCESS_FINE_LOCATION` och `ACCESS_COARSE_LOCATION` (om de finns)
+- Behåll `CAMERA`-permission
+
+Inga databasändringar krävs — `latitude`/`longitude`-kolumnerna kan finnas kvar (nullable), de skrivs bara inte till längre.
 
