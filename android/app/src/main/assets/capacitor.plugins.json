@@ -4,7 +4,7 @@
 		"classpath": "com.getcapacitor.community.admob.AdMob"
 	},
 	{
-		"pkg": "capacitor-health",
-		"classpath": "com.fit_up.health.capacitor.HealthPlugin"
+		"pkg": "@capgo/capacitor-health",
+		"classpath": "app.capgo.plugin.health.HealthPlugin"
 	}
 ]
