@@ -1,27 +1,18 @@
 
 
-## Plan: Proaktiv kamera-tillståndsfråga
+## Plan: Uppgradera CI till macOS 26 + Xcode 26
 
-### Vad
-Be om kameraåtkomst tidigt — t.ex. när användaren öppnar en utmaning med foto/video-bevis — istället för att vänta tills de trycker på uppladdningsknappen. Detta ger en bättre upplevelse och undviker att Apple avvisar appen för att permission-prompten inte visas i rätt kontext.
+### Bakgrund
+GitHub Actions har `macos-26` runners med Xcode 26.2 som default. Detta säkerställer att appen byggs med iOS 26 SDK, vilket App Store kräver.
 
-### Hur
+### Ändringar
 
-**`src/pages/ChallengePage.tsx`**
-- Lägg till en `useEffect` som körs när sidan laddas (och `challenge.proof_type` är `photo` eller `video`)
-- Anropar `navigator.mediaDevices.getUserMedia({ video: true })` för att trigga browser/native permission-dialogen
-- Stänger streamen direkt efteråt (vi behöver inte den, bara trigga prompten)
-- Fångar eventuella fel tyst (användaren kan neka)
+**1. `.github/workflows/ios-testflight.yml`**
+- `runs-on: macos-14` → `runs-on: macos-26`
+- Ta bort steget "Select Xcode" helt (Xcode 26.2 är default på macos-26)
 
-```typescript
-useEffect(() => {
-  if (challenge && challenge.proof_type !== 'text') {
-    navigator.mediaDevices.getUserMedia({ video: true })
-      .then(stream => stream.getTracks().forEach(t => t.stop()))
-      .catch(() => {});
-  }
-}, [challenge]);
-```
+**2. `ios/App/App.xcodeproj/project.pbxproj`**
+- Uppdatera `IPHONEOS_DEPLOYMENT_TARGET` från `15.0` till `16.0` i alla build configurations (4 ställen: Debug/Release för projekt + target). iOS 16 är minimikravet för Xcode 26.
 
-Ingen databasändring behövs. En liten kodändring i en fil.
+Det är allt som behövs. Fastfile, entitlements och resten förblir oförändrade.
 

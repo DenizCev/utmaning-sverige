@@ -30,6 +30,14 @@ export default function ChallengePage() {
     fetchData();
   }, [id, user]);
 
+  useEffect(() => {
+    if (challenge && challenge.proof_type !== 'text') {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => stream.getTracks().forEach(t => t.stop()))
+        .catch(() => {});
+    }
+  }, [challenge]);
+
   const fetchData = async () => {
     const { data: ch } = await supabase.from('challenges').select('*').eq('id', id).maybeSingle();
     setChallenge(ch);
