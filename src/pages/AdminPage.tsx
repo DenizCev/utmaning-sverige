@@ -50,6 +50,7 @@ export default function AdminPage() {
   const [subLoading, setSubLoading] = useState(false);
   const [pointsInput, setPointsInput] = useState<Record<string, number>>({});
 
+  const [memberCounts, setMemberCounts] = useState<Record<string, number>>({});
 
   const [saving, setSaving] = useState(false);
 
