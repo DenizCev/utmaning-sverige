@@ -32,7 +32,7 @@ export default function ChallengePage() {
 
   useEffect(() => {
     if (challenge && challenge.proof_type !== 'text') {
-      navigator.mediaDevices.getUserMedia({ video: true })
+      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
         .then(stream => stream.getTracks().forEach(t => t.stop()))
         .catch(() => {});
     }
