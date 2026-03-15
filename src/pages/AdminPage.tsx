@@ -70,6 +70,19 @@ export default function AdminPage() {
     const { data } = await supabase.from('competitions').select('*').order('created_at', { ascending: false });
     setCompetitions(data || []);
     if (data && data.length > 0 && !selectedCompId) setSelectedCompId(data[0].id);
+
+    // Fetch member counts for all competitions
+    if (data && data.length > 0) {
+      const { data: memberships } = await supabase
+        .from('competition_memberships')
+        .select('competition_id')
+        .in('competition_id', data.map(c => c.id));
+      const counts: Record<string, number> = {};
+      (memberships || []).forEach(m => {
+        counts[m.competition_id] = (counts[m.competition_id] || 0) + 1;
+      });
+      setMemberCounts(counts);
+    }
   };
 
   const fetchChallenges = async () => {
