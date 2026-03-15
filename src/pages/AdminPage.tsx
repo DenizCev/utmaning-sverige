@@ -393,6 +393,29 @@ export default function AdminPage() {
 
         {/* PARTICIPANTS TAB */}
         <TabsContent value="participants">
+          {competitions.length > 1 && (
+            <div className="mb-4">
+              <Label className="mb-2 block">Välj tävling</Label>
+              <Select value={selectedCompId || ''} onValueChange={setSelectedCompId}>
+                <SelectTrigger><SelectValue placeholder="Välj tävling..." /></SelectTrigger>
+                <SelectContent>
+                  {competitions.map(c => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name} ({memberCounts[c.id] || 0} anmälda)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {selectedCompId && (
+            <div className="mb-4 p-3 bg-muted/50 rounded-lg flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-sweden-gold" />
+              <span className="font-semibold">Tävling:</span>
+              <span>{competitions.find(c => c.id === selectedCompId)?.name || '—'}</span>
+              <Badge variant="secondary" className="ml-auto">{memberCounts[selectedCompId] || 0} anmälda</Badge>
+            </div>
+          )}
           <AdminParticipants competitionId={selectedCompId} />
         </TabsContent>
 
