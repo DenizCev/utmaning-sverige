@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Plus, Trash2, CheckCircle, XCircle, Eye, Loader2, UserPlus, Flag, Palette, Users as UsersIcon, UsersRound, ScrollText, Clock, Trophy } from 'lucide-react';
+import { Shield, Plus, Trash2, CheckCircle, XCircle, Eye, Loader2, UserPlus, Flag, Palette, Users, UsersRound, ScrollText, Clock, Trophy } from 'lucide-react';
 import { AdminParticipants } from '@/components/AdminParticipants';
 import { AdminBranding } from '@/components/AdminBranding';
 import { AdminUsers } from '@/components/AdminUsers';
@@ -50,6 +50,7 @@ export default function AdminPage() {
   const [subLoading, setSubLoading] = useState(false);
   const [pointsInput, setPointsInput] = useState<Record<string, number>>({});
 
+  const [memberCounts, setMemberCounts] = useState<Record<string, number>>({});
 
   const [saving, setSaving] = useState(false);
 
@@ -69,6 +70,19 @@ export default function AdminPage() {
     const { data } = await supabase.from('competitions').select('*').order('created_at', { ascending: false });
     setCompetitions(data || []);
     if (data && data.length > 0 && !selectedCompId) setSelectedCompId(data[0].id);
+
+    // Fetch member counts for all competitions
+    if (data && data.length > 0) {
+      const { data: memberships } = await supabase
+        .from('competition_memberships')
+        .select('competition_id')
+        .in('competition_id', data.map(c => c.id));
+      const counts: Record<string, number> = {};
+      (memberships || []).forEach(m => {
+        counts[m.competition_id] = (counts[m.competition_id] || 0) + 1;
+      });
+      setMemberCounts(counts);
+    }
   };
 
   const fetchChallenges = async () => {
@@ -224,7 +238,7 @@ export default function AdminPage() {
           <TabsTrigger value="challenges">Utmaningar {selectedCompId && `(${competitions.find(c => c.id === selectedCompId)?.name || ''})`}</TabsTrigger>
           <TabsTrigger value="participants">Deltagare</TabsTrigger>
           <TabsTrigger value="submissions">Inlämningar</TabsTrigger>
-          <TabsTrigger value="users"><UsersIcon className="h-4 w-4 mr-1" /> Alla användare</TabsTrigger>
+          <TabsTrigger value="users"><Users className="h-4 w-4 mr-1" /> Alla användare</TabsTrigger>
           <TabsTrigger value="teams"><UsersRound className="h-4 w-4 mr-1" /> Alla lag</TabsTrigger>
           <TabsTrigger value="admins">Admins</TabsTrigger>
           <TabsTrigger value="rules"><ScrollText className="h-4 w-4 mr-1" /> Regler</TabsTrigger>
@@ -279,7 +293,7 @@ export default function AdminPage() {
                     <div className="min-w-0">
                       <p className="font-semibold truncate">{c.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        Start: {new Date(c.start_time).toLocaleString('sv-SE')} · {c.entry_diamonds || 0} 💎
+                        Start: {new Date(c.start_time).toLocaleString('sv-SE')} · {c.entry_diamonds || 0} 💎 · <Users className="inline h-3.5 w-3.5" /> {memberCounts[c.id] || 0} anmälda
                         {c.end_time && ` · Avslutad: ${new Date(c.end_time).toLocaleDateString('sv-SE')}`}
                       </p>
                     </div>
