@@ -143,7 +143,7 @@ export default function ChallengePage() {
                         onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
                       />
                       <button
-                        onClick={() => fileInputRef.current?.click()}
+                        onClick={() => setShowPermissionDialog(true)}
                         className="w-full border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 transition-colors"
                       >
                         {selectedFile ? (
