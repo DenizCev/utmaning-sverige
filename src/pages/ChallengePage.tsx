@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
 import { Camera, Video, FileText, Upload, Clock, ArrowLeft, Loader2, Smartphone } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -23,21 +24,13 @@ export default function ChallengePage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showPermissionDialog, setShowPermissionDialog] = useState(false);
 
   useEffect(() => {
     if (!user) { navigate('/auth'); return; }
     if (!id) return;
     fetchData();
   }, [id, user]);
-
-  useEffect(() => {
-    if (challenge && challenge.proof_type !== 'text') {
-      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-        .then(stream => stream.getTracks().forEach(t => t.stop()))
-        .catch(() => {});
-    }
-  }, [challenge]);
-
   const fetchData = async () => {
     const { data: ch } = await supabase.from('challenges').select('*').eq('id', id).maybeSingle();
     setChallenge(ch);
@@ -150,7 +143,7 @@ export default function ChallengePage() {
                         onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
                       />
                       <button
-                        onClick={() => fileInputRef.current?.click()}
+                        onClick={() => setShowPermissionDialog(true)}
                         className="w-full border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 transition-colors"
                       >
                         {selectedFile ? (
@@ -189,6 +182,29 @@ export default function ChallengePage() {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={showPermissionDialog} onOpenChange={setShowPermissionDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Kamera och mikrofon</AlertDialogTitle>
+            <AlertDialogDescription>
+              Appen behöver tillgång till din kamera och mikrofon för att ta {challenge?.proof_type === 'video' ? 'video' : 'foto'} som bevis för utmaningen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Avbryt</AlertDialogCancel>
+            <AlertDialogAction onClick={async () => {
+              try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                stream.getTracks().forEach(t => t.stop());
+                fileInputRef.current?.click();
+              } catch {
+                toast.error('Kamera/mikrofon nekad. Slå på tillstånd i enhetens Inställningar.');
+              }
+            }}>Tillåt</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
