@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
 import { Camera, Video, FileText, Upload, Clock, ArrowLeft, Loader2, Smartphone } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -23,21 +24,13 @@ export default function ChallengePage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showPermissionDialog, setShowPermissionDialog] = useState(false);
 
   useEffect(() => {
     if (!user) { navigate('/auth'); return; }
     if (!id) return;
     fetchData();
   }, [id, user]);
-
-  useEffect(() => {
-    if (challenge && challenge.proof_type !== 'text') {
-      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-        .then(stream => stream.getTracks().forEach(t => t.stop()))
-        .catch(() => {});
-    }
-  }, [challenge]);
-
   const fetchData = async () => {
     const { data: ch } = await supabase.from('challenges').select('*').eq('id', id).maybeSingle();
     setChallenge(ch);
