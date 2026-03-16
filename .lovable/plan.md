@@ -1,18 +1,37 @@
 
 
-## Plan: Uppgradera CI till macOS 26 + Xcode 26
+## Plan: Visa egen tillståndsdialog varje gång kameran ska öppnas
 
-### Bakgrund
-GitHub Actions har `macos-26` runners med Xcode 26.2 som default. Detta säkerställer att appen byggs med iOS 26 SDK, vilket App Store kräver.
+Operativsystemets tillståndsdialog kan bara visas **en gång** — det går inte att tvinga fram den igen. Lösningen är att visa en **egen in-app-dialog** varje gång användaren trycker på kamera-knappen, som förklarar att appen behöver tillgång till kamera och mikrofon. Först efter att användaren bekräftar öppnas kameran.
 
-### Ändringar
+Detta uppfyller App Store Guideline 5.1.1(ii) — appen informerar tydligt om varför tillstånd behövs, varje gång.
 
-**1. `.github/workflows/ios-testflight.yml`**
-- `runs-on: macos-14` → `runs-on: macos-26`
-- Ta bort steget "Select Xcode" helt (Xcode 26.2 är default på macos-26)
+### Ändringar i `src/pages/ChallengePage.tsx`
 
-**2. `ios/App/App.xcodeproj/project.pbxproj`**
-- Uppdatera `IPHONEOS_DEPLOYMENT_TARGET` från `15.0` till `16.0` i alla build configurations (4 ställen: Debug/Release för projekt + target). iOS 16 är minimikravet för Xcode 26.
+1. **Ta bort** den proaktiva `useEffect` (rad 33-39) som kör `getUserMedia` vid sidladdning
+2. **Lägg till state** `showPermissionDialog` (boolean)
+3. **Lägg till en AlertDialog-komponent** som visas varje gång användaren trycker på kamera-knappen:
+   - Titel: "Kamera och mikrofon"
+   - Text: "Appen behöver tillgång till din kamera och mikrofon för att ta foto/video som bevis för utmaningen."
+   - Knapp "Tillåt" → anropar `getUserMedia({ video: true, audio: true })`, stoppar streamen, sedan öppnar file input
+   - Knapp "Avbryt" → stänger dialogen
+   - Om `getUserMedia` nekas → visar toast om att slå på tillstånd i enhetens inställningar
+4. **Ändra kamera-knappens onClick** (rad 153) från `fileInputRef.current?.click()` till `setShowPermissionDialog(true)`
+5. **Importera** `AlertDialog` från `@/components/ui/alert-dialog`
 
-Det är allt som behövs. Fastfile, entitlements och resten förblir oförändrade.
+### Flöde
+
+```text
+Användare trycker "Öppna kamera"
+  → Egen dialog visas: "Appen behöver kamera och mikrofon"
+    → Användare trycker "Tillåt"
+      → getUserMedia({ video, audio }) körs
+        → OS-prompt visas (första gången) ELLER godkänns direkt
+          → Kameran öppnas via file input
+      → Om nekat: toast "Slå på tillstånd i Inställningar"
+    → Användare trycker "Avbryt"
+      → Dialogen stängs, inget händer
+```
+
+Inga andra filer behöver ändras.
 
