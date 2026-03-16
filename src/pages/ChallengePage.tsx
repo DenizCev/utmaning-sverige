@@ -193,14 +193,8 @@ export default function ChallengePage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Avbryt</AlertDialogCancel>
-            <AlertDialogAction onClick={async () => {
-              try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                stream.getTracks().forEach(t => t.stop());
-                fileInputRef.current?.click();
-              } catch {
-                toast.error('Kamera/mikrofon nekad. Slå på tillstånd i enhetens Inställningar.');
-              }
+            <AlertDialogAction onClick={() => {
+              fileInputRef.current?.click();
             }}>Tillåt</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
