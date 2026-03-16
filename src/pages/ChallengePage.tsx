@@ -182,6 +182,29 @@ export default function ChallengePage() {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={showPermissionDialog} onOpenChange={setShowPermissionDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Kamera och mikrofon</AlertDialogTitle>
+            <AlertDialogDescription>
+              Appen behöver tillgång till din kamera och mikrofon för att ta {challenge?.proof_type === 'video' ? 'video' : 'foto'} som bevis för utmaningen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Avbryt</AlertDialogCancel>
+            <AlertDialogAction onClick={async () => {
+              try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                stream.getTracks().forEach(t => t.stop());
+                fileInputRef.current?.click();
+              } catch {
+                toast.error('Kamera/mikrofon nekad. Slå på tillstånd i enhetens Inställningar.');
+              }
+            }}>Tillåt</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
