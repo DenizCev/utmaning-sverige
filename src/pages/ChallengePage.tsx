@@ -190,7 +190,7 @@ export default function ChallengePage() {
               {challenge?.proof_type === 'video' ? <Video className="h-7 w-7 text-primary" /> : <Camera className="h-7 w-7 text-primary" />}
             </div>
             <AlertDialogTitle className="text-center text-xl">
-              {challenge?.proof_type === 'video' ? 'Tillgång till kamera & mikrofon' : 'Tillgång till kamera'}
+              {challenge?.proof_type === 'video' ? 'Kampen vill ha tillgång till kamera & mikrofon' : 'Kampen vill ha tillgång till kameran'}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3 text-center">
