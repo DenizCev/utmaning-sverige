@@ -188,7 +188,9 @@ export default function ChallengePage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Kamera och mikrofon</AlertDialogTitle>
             <AlertDialogDescription>
-              Appen behöver tillgång till din kamera och mikrofon för att ta {challenge?.proof_type === 'video' ? 'video' : 'foto'} som bevis för utmaningen.
+              {challenge?.proof_type === 'video'
+                ? 'Appen behöver tillgång till din kamera och mikrofon för att spela in video som bevis för utmaningen. Videon laddas upp direkt och granskas av en admin.'
+                : 'Appen behöver tillgång till din kamera för att ta ett foto som bevis för utmaningen. Fotot laddas upp direkt och granskas av en admin.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
