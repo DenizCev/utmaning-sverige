@@ -184,20 +184,44 @@ export default function ChallengePage() {
       </Card>
 
       <AlertDialog open={showPermissionDialog} onOpenChange={setShowPermissionDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Kamera och mikrofon</AlertDialogTitle>
-            <AlertDialogDescription>
-              {challenge?.proof_type === 'video'
-                ? 'Appen behöver tillgång till din kamera och mikrofon för att spela in video som bevis för utmaningen. Videon laddas upp direkt och granskas av en admin.'
-                : 'Appen behöver tillgång till din kamera för att ta ett foto som bevis för utmaningen. Fotot laddas upp direkt och granskas av en admin.'}
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader className="space-y-4">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+              {challenge?.proof_type === 'video' ? <Video className="h-7 w-7 text-primary" /> : <Camera className="h-7 w-7 text-primary" />}
+            </div>
+            <AlertDialogTitle className="text-center text-xl">
+              {challenge?.proof_type === 'video' ? 'Tillgång till kamera & mikrofon' : 'Tillgång till kamera'}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-center">
+                <p className="text-sm text-muted-foreground">
+                  {challenge?.proof_type === 'video'
+                    ? 'För att kunna spela in en video som bevis för utmaningen behöver appen tillgång till din kamera och mikrofon.'
+                    : 'För att kunna ta ett foto som bevis för utmaningen behöver appen tillgång till din kamera.'}
+                </p>
+                <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground space-y-1.5">
+                  <p className="font-semibold text-foreground">Varför behövs detta?</p>
+                  <ul className="list-disc list-inside space-y-1 text-left">
+                    {challenge?.proof_type === 'video' ? (
+                      <>
+                        <li>Kameran används för att spela in video direkt</li>
+                        <li>Mikrofonen fångar ljud till videon</li>
+                      </>
+                    ) : (
+                      <li>Kameran används för att ta ett foto direkt</li>
+                    )}
+                    <li>Beviset laddas upp och granskas av en admin</li>
+                    <li>Inga bilder eller videos sparas utan ditt godkännande</li>
+                  </ul>
+                </div>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Avbryt</AlertDialogCancel>
-            <AlertDialogAction onClick={() => {
-              fileInputRef.current?.click();
-            }}>Tillåt</AlertDialogAction>
+          <AlertDialogFooter className="sm:flex-col gap-2 sm:space-x-0">
+            <AlertDialogAction onClick={() => fileInputRef.current?.click()} className="w-full gradient-gold text-accent-foreground font-bold">
+              {challenge?.proof_type === 'video' ? 'Tillåt kamera & mikrofon' : 'Tillåt kamera'}
+            </AlertDialogAction>
+            <AlertDialogCancel className="w-full">Avbryt</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
