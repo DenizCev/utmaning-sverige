@@ -17,6 +17,7 @@ import { RankBadge } from '@/components/RankBadge';
 import { SkinShop } from '@/components/SkinShop';
 import { RewardedAdDialog } from '@/components/RewardedAdDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { AlertDialog as PermDialog, AlertDialogAction as PermAction, AlertDialogCancel as PermCancel, AlertDialogContent as PermContent, AlertDialogDescription as PermDesc, AlertDialogFooter as PermFooter, AlertDialogHeader as PermHeader, AlertDialogTitle as PermTitle } from '@/components/ui/alert-dialog';
 import { Camera, Save, Trophy, Loader2, Diamond, Eye, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -35,6 +36,7 @@ export default function ProfilePage() {
   const [stats, setStats] = useState({ competitions: 0, challenges: 0, points: 0 });
   const [history, setHistory] = useState<any[]>([]);
   const [adDialogOpen, setAdDialogOpen] = useState(false);
+  const [showCameraDialog, setShowCameraDialog] = useState(false);
   const [deleteEmail, setDeleteEmail] = useState('');
   const [deleting, setDeleting] = useState(false);
   const { signOut } = useAuth();
@@ -108,7 +110,7 @@ export default function ProfilePage() {
                 equippedSkin={profile?.equipped_skin}
                 size="xl"
               />
-              <button onClick={() => fileRef.current?.click()} className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full gradient-gold flex items-center justify-center shadow-md">
+              <button onClick={() => setShowCameraDialog(true)} className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full gradient-gold flex items-center justify-center shadow-md">
                 <Camera className="h-4 w-4 text-accent-foreground" />
               </button>
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
@@ -265,6 +267,39 @@ export default function ProfilePage() {
           </AlertDialog>
         </CardContent>
       </Card>
+      <PermDialog open={showCameraDialog} onOpenChange={setShowCameraDialog}>
+        <PermContent className="max-w-md">
+          <PermHeader className="space-y-4">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+              <Camera className="h-7 w-7 text-primary" />
+            </div>
+            <PermTitle className="text-center text-xl">
+              Kampen vill ha tillgång till kameran
+            </PermTitle>
+            <PermDesc asChild>
+              <div className="space-y-3 text-center">
+                <p className="text-sm text-muted-foreground">
+                  För att kunna ta eller välja en profilbild behöver appen tillgång till din kamera eller ditt fotobibliotek.
+                </p>
+                <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground space-y-1.5">
+                  <p className="font-semibold text-foreground">Varför behövs detta?</p>
+                  <ul className="list-disc list-inside space-y-1 text-left">
+                    <li>Kameran eller galleriet används för att välja en profilbild</li>
+                    <li>Bilden laddas upp och visas som din avatar i appen</li>
+                    <li>Inga bilder sparas eller delas utan ditt godkännande</li>
+                  </ul>
+                </div>
+              </div>
+            </PermDesc>
+          </PermHeader>
+          <PermFooter className="sm:flex-col gap-2 sm:space-x-0">
+            <PermAction onClick={() => fileRef.current?.click()} className="w-full gradient-gold text-accent-foreground font-bold">
+              Tillåt kamera
+            </PermAction>
+            <PermCancel className="w-full">Avbryt</PermCancel>
+          </PermFooter>
+        </PermContent>
+      </PermDialog>
     </div>
   );
 }
