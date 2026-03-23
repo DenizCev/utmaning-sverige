@@ -110,7 +110,7 @@ export default function ProfilePage() {
                 equippedSkin={profile?.equipped_skin}
                 size="xl"
               />
-              <button onClick={() => fileRef.current?.click()} className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full gradient-gold flex items-center justify-center shadow-md">
+              <button onClick={() => setShowCameraDialog(true)} className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full gradient-gold flex items-center justify-center shadow-md">
                 <Camera className="h-4 w-4 text-accent-foreground" />
               </button>
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
