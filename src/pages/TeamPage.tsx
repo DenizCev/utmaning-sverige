@@ -91,11 +91,11 @@ export default function TeamPage() {
             <DialogHeader><DialogTitle>Skapa nytt lag</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <div className="flex items-center gap-4">
-                <Avatar className="h-16 w-16 cursor-pointer" onClick={() => fileRef.current?.click()}>
+                <Avatar className="h-16 w-16 cursor-pointer" onClick={() => setShowCameraDialog(true)}>
                   <AvatarImage src={teamAvatar || undefined} />
                   <AvatarFallback className="gradient-sweden text-primary-foreground">{teamName?.slice(0, 2).toUpperCase() || '🏅'}</AvatarFallback>
                 </Avatar>
-                <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}>Välj lagbild</Button>
+                <Button variant="outline" size="sm" onClick={() => setShowCameraDialog(true)}>Välj lagbild</Button>
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
               </div>
               <div className="space-y-2">
