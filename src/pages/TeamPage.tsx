@@ -31,6 +31,7 @@ export default function TeamPage() {
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
   const [members, setMembers] = useState<TeamMember[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [showCameraDialog, setShowCameraDialog] = useState(false);
 
   useEffect(() => {
     if (!user) navigate('/auth');
