@@ -17,6 +17,7 @@ import { RankBadge } from '@/components/RankBadge';
 import { SkinShop } from '@/components/SkinShop';
 import { RewardedAdDialog } from '@/components/RewardedAdDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { AlertDialog as PermDialog, AlertDialogAction as PermAction, AlertDialogCancel as PermCancel, AlertDialogContent as PermContent, AlertDialogDescription as PermDesc, AlertDialogFooter as PermFooter, AlertDialogHeader as PermHeader, AlertDialogTitle as PermTitle } from '@/components/ui/alert-dialog';
 import { Camera, Save, Trophy, Loader2, Diamond, Eye, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
