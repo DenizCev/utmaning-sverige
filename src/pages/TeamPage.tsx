@@ -11,7 +11,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Users, Plus, UserPlus, Crown, LogOut, Check, X, Mail, Loader2, Trash2, UserCheck } from 'lucide-react';
+import { AlertDialog as PermDialog, AlertDialogAction as PermAction, AlertDialogCancel as PermCancel, AlertDialogContent as PermContent, AlertDialogDescription as PermDesc, AlertDialogFooter as PermFooter, AlertDialogHeader as PermHeader, AlertDialogTitle as PermTitle } from '@/components/ui/alert-dialog';
+import { Users, Plus, UserPlus, Crown, LogOut, Check, X, Mail, Loader2, Trash2, UserCheck, Camera } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useRef } from 'react';
@@ -30,6 +31,7 @@ export default function TeamPage() {
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
   const [members, setMembers] = useState<TeamMember[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [showCameraDialog, setShowCameraDialog] = useState(false);
 
   useEffect(() => {
     if (!user) navigate('/auth');
@@ -89,11 +91,11 @@ export default function TeamPage() {
             <DialogHeader><DialogTitle>Skapa nytt lag</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <div className="flex items-center gap-4">
-                <Avatar className="h-16 w-16 cursor-pointer" onClick={() => fileRef.current?.click()}>
+                <Avatar className="h-16 w-16 cursor-pointer" onClick={() => setShowCameraDialog(true)}>
                   <AvatarImage src={teamAvatar || undefined} />
                   <AvatarFallback className="gradient-sweden text-primary-foreground">{teamName?.slice(0, 2).toUpperCase() || '🏅'}</AvatarFallback>
                 </Avatar>
-                <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}>Välj lagbild</Button>
+                <Button variant="outline" size="sm" onClick={() => setShowCameraDialog(true)}>Välj lagbild</Button>
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
               </div>
               <div className="space-y-2">
@@ -271,6 +273,39 @@ export default function TeamPage() {
           ))}
         </div>
       )}
+      <PermDialog open={showCameraDialog} onOpenChange={setShowCameraDialog}>
+        <PermContent className="max-w-md">
+          <PermHeader className="space-y-4">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+              <Camera className="h-7 w-7 text-primary" />
+            </div>
+            <PermTitle className="text-center text-xl">
+              Kampen vill ha tillgång till kameran
+            </PermTitle>
+            <PermDesc asChild>
+              <div className="space-y-3 text-center">
+                <p className="text-sm text-muted-foreground">
+                  För att kunna ta eller välja en lagbild behöver appen tillgång till din kamera eller ditt fotobibliotek.
+                </p>
+                <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground space-y-1.5">
+                  <p className="font-semibold text-foreground">Varför behövs detta?</p>
+                  <ul className="list-disc list-inside space-y-1 text-left">
+                    <li>Kameran eller galleriet används för att välja en lagbild</li>
+                    <li>Bilden laddas upp och visas som lagets avatar i appen</li>
+                    <li>Inga bilder sparas eller delas utan ditt godkännande</li>
+                  </ul>
+                </div>
+              </div>
+            </PermDesc>
+          </PermHeader>
+          <PermFooter className="sm:flex-col gap-2 sm:space-x-0">
+            <PermAction onClick={() => fileRef.current?.click()} className="w-full gradient-gold text-accent-foreground font-bold">
+              Tillåt kamera
+            </PermAction>
+            <PermCancel className="w-full">Avbryt</PermCancel>
+          </PermFooter>
+        </PermContent>
+      </PermDialog>
     </div>
   );
 }
