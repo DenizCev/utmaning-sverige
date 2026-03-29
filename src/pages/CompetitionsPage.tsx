@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { isAdMobAvailable } from '@/utils/admob';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useDiamonds } from '@/hooks/useDiamonds';
@@ -301,9 +302,11 @@ export default function CompetitionsPage() {
       {user && (
         <div className="flex items-center justify-center gap-4 mb-6">
           <DiamondBalance count={diamonds} />
-          <Button size="sm" variant="outline" onClick={() => setAdDialogOpen(true)} disabled={dailyAds >= 10}>
-            <Eye className="h-4 w-4 mr-1" /> Annons ({dailyAds}/10)
-          </Button>
+          {isAdMobAvailable() && (
+            <Button size="sm" variant="outline" onClick={() => setAdDialogOpen(true)} disabled={dailyAds >= 10}>
+              <Eye className="h-4 w-4 mr-1" /> Annons ({dailyAds}/10)
+            </Button>
+          )}
           <ShareButton />
           <RewardedAdDialog open={adDialogOpen} onClose={() => setAdDialogOpen(false)} onComplete={async () => { await watchAd(); setAdDialogOpen(false); }} />
         </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { isAdMobAvailable } from '@/utils/admob';
 import { useAuth } from '@/hooks/useAuth';
 import { useDiamonds } from '@/hooks/useDiamonds';
 import { useStreak } from '@/hooks/useStreak';
@@ -159,9 +160,11 @@ export default function ProfilePage() {
             <DiamondBalance count={diamonds} />
           </div>
           <div className="flex flex-wrap gap-2 mb-4">
-            <Button size="sm" variant="outline" onClick={() => setAdDialogOpen(true)} disabled={dailyAds >= 10}>
-              <Eye className="h-4 w-4 mr-1" /> Titta på annons ({dailyAds}/10)
-            </Button>
+            {isAdMobAvailable() && (
+              <Button size="sm" variant="outline" onClick={() => setAdDialogOpen(true)} disabled={dailyAds >= 10}>
+                <Eye className="h-4 w-4 mr-1" /> Titta på annons ({dailyAds}/10)
+              </Button>
+            )}
             <ShareButton text="Kolla in Kampen! 🏆🇸🇪" />
           </div>
           <RewardedAdDialog open={adDialogOpen} onClose={() => setAdDialogOpen(false)} onComplete={async () => { await watchAd(); setAdDialogOpen(false); }} />
