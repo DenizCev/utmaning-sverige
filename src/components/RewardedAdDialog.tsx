@@ -60,8 +60,9 @@ export function RewardedAdDialog({ open, onClose, onComplete, adDuration = 15 }:
         setSecondsLeft(adDuration);
       }
     } else {
-      // Web fallback: show placeholder ad with timer
-      setStarted(true);
+      // No ad provider available on this platform
+      onClose();
+      return;
     }
   };
 
