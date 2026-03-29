@@ -13,7 +13,7 @@ interface RewardedAdDialogProps {
 }
 
 const AD_MESSAGES = [
-  '🏆 Sweden Challenge Race – Sveriges största utmaning!',
+  '🏆 Kampen – Sveriges största utmaning!',
   '🇸🇪 Tävla mot hela Sverige!',
   '💎 Samla diamanter och lås upp skins!',
   '🔥 Bygg din streak – claima daglig bonus!',

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { isAdMobAvailable } from '@/utils/admob';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useDiamonds } from '@/hooks/useDiamonds';
@@ -274,9 +275,11 @@ export default function Dashboard() {
       {user && !hasJoined && (
         <div className="glass-card rounded-xl p-4 mb-10 flex flex-col sm:flex-row items-center justify-center gap-3">
           <p className="text-sm text-muted-foreground">Tjäna diamanter:</p>
-          <Button size="sm" variant="outline" onClick={() => setAdDialogOpen(true)} disabled={dailyAds >= 10}>
-            <Eye className="h-4 w-4 mr-1" /> Annons ({dailyAds}/10)
-          </Button>
+          {isAdMobAvailable() && (
+            <Button size="sm" variant="outline" onClick={() => setAdDialogOpen(true)} disabled={dailyAds >= 10}>
+              <Eye className="h-4 w-4 mr-1" /> Annons ({dailyAds}/10)
+            </Button>
+          )}
           <ShareButton text={`Tävla i ${competition.name}! 🏆🇸🇪`} />
         </div>
       )}

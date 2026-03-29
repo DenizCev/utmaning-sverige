@@ -113,7 +113,7 @@ export default function ChallengePage() {
                 {existingSubmission.status === 'rejected' && '❌ Avvisad – försök igen'}
               </Badge>
               <div>
-                <ShareButton text={`Jag klarade utmaningen "${challenge.title}" i Sweden Challenge Race! 🏆`} showDiamondInfo />
+                <ShareButton text={`Jag klarade utmaningen "${challenge.title}" i Kampen! 🏆`} showDiamondInfo />
               </div>
             </div>
           ) : (
