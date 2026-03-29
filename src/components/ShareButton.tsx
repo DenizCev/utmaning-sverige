@@ -13,7 +13,7 @@ interface ShareButtonProps {
 }
 
 export function ShareButton({ 
-  text = 'Jag tävlar i Sweden Challenge Race! Häng med! 🏆🇸🇪',
+  text = 'Jag tävlar i Kampen! Häng med! 🏆🇸🇪',
   url,
   variant = 'outline',
   size = 'sm',
@@ -26,7 +26,7 @@ export function ShareButton({
   const handleShare = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({ title: 'Sweden Challenge Race', text, url: shareUrl });
+        await navigator.share({ title: 'Kampen', text, url: shareUrl });
         await shareDiamond();
       } catch {}
     } else {

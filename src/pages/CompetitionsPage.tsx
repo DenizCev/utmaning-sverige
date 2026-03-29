@@ -256,7 +256,7 @@ export default function CompetitionsPage() {
                 </Button>
               </Link>
             )}
-            <ShareButton text={`Tävla i ${comp.name} på Sweden Challenge Race! 🏆🇸🇪`} size="sm" />
+            <ShareButton text={`Tävla i ${comp.name} på Kampen! 🏆🇸🇪`} size="sm" />
             {isAdmin && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>

@@ -115,7 +115,7 @@ export default function AllTimeLeaderboardPage() {
       </div>
 
       <div className="flex justify-center mb-4">
-        <ShareButton text="Kolla all-time leaderboarden på Sweden Challenge Race! 🏆🇸🇪" />
+        <ShareButton text="Kolla all-time leaderboarden på Kampen! 🏆🇸🇪" />
       </div>
 
       <div className="mb-6">

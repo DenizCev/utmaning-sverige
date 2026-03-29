@@ -162,7 +162,7 @@ export default function ProfilePage() {
             <Button size="sm" variant="outline" onClick={() => setAdDialogOpen(true)} disabled={dailyAds >= 10}>
               <Eye className="h-4 w-4 mr-1" /> Titta på annons ({dailyAds}/10)
             </Button>
-            <ShareButton text="Kolla in Sweden Challenge Race! 🏆🇸🇪" />
+            <ShareButton text="Kolla in Kampen! 🏆🇸🇪" />
           </div>
           <RewardedAdDialog open={adDialogOpen} onClose={() => setAdDialogOpen(false)} onComplete={async () => { await watchAd(); setAdDialogOpen(false); }} />
           {history.length > 0 && (
