@@ -52,7 +52,7 @@
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Kampen använder Apple Hälsa för att synka stegdata.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Appen använder kameran för att ta bilder som bevis för utmaningar. Bilderna laddas upp till våra servrar och granskas av administratörer.</string>
+	<string>Kampen behöver åtkomst till kameran så att du kan ta ett foto eller spela in en video som bevis på att du har slutfört en utmaning. Materialet laddas upp till våra servrar och granskas av administratörer för att verifiera ditt resultat.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Kampen behöver åtkomst till ditt fotobibliotek så att du kan välja en befintlig bild eller video som bevis på en slutförd utmaning, eller välja en profilbild. Bilderna laddas upp och granskas av administratörer.</string>
 	<key>NSMicrophoneUsageDescription</key>
