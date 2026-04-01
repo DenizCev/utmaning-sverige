@@ -190,30 +190,18 @@ export default function ChallengePage() {
               {challenge?.proof_type === 'video' ? <Video className="h-7 w-7 text-primary" /> : <Camera className="h-7 w-7 text-primary" />}
             </div>
             <AlertDialogTitle className="text-center text-xl">
-              {challenge?.proof_type === 'video' ? 'Kampen vill ha tillgång till kamera & mikrofon' : 'Kampen vill ha tillgång till kameran'}
+              {challenge?.proof_type === 'video' ? 'Kamera & mikrofon' : 'Kameratillgång'}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3 text-center">
                 <p className="text-sm text-muted-foreground">
-                  {challenge?.proof_type === 'video'
-                    ? 'För att kunna spela in en video som bevis för utmaningen behöver appen tillgång till din kamera och mikrofon.'
-                    : 'För att kunna ta ett foto som bevis för utmaningen behöver appen tillgång till din kamera.'}
+                  Kampen använder kameran så att du kan ta bilder eller spela in video när du genomför utmaningar i appen, till exempel genom att fota eller filma ditt resultat för att registrera att utmaningen är klar.
                 </p>
-                <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground space-y-1.5">
-                  <p className="font-semibold text-foreground">Varför behövs detta?</p>
-                  <ul className="list-disc list-inside space-y-1 text-left">
-                    {challenge?.proof_type === 'video' ? (
-                      <>
-                        <li>Kameran används för att spela in video direkt</li>
-                        <li>Mikrofonen fångar ljud till videon</li>
-                      </>
-                    ) : (
-                      <li>Kameran används för att ta ett foto direkt</li>
-                    )}
-                    <li>Beviset laddas upp och granskas av en admin</li>
-                    <li>Inga bilder eller videos sparas utan ditt godkännande</li>
-                  </ul>
-                </div>
+                {challenge?.proof_type === 'video' && (
+                  <p className="text-xs text-muted-foreground">
+                    Om du spelar in video behöver appen även tillgång till mikrofonen för att få med ljud.
+                  </p>
+                )}
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>

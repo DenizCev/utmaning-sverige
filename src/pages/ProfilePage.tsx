@@ -277,21 +277,16 @@ export default function ProfilePage() {
               <Camera className="h-7 w-7 text-primary" />
             </div>
             <PermTitle className="text-center text-xl">
-              Kampen vill ha tillgång till kameran
+              Kameratillgång
             </PermTitle>
             <PermDesc asChild>
               <div className="space-y-3 text-center">
                 <p className="text-sm text-muted-foreground">
-                  För att kunna ta eller välja en profilbild behöver appen tillgång till din kamera eller ditt fotobibliotek.
+                  Kampen använder kameran så att du kan ta bilder eller spela in video när du genomför utmaningar i appen, till exempel genom att fota eller filma ditt resultat för att registrera att utmaningen är klar.
                 </p>
-                <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground space-y-1.5">
-                  <p className="font-semibold text-foreground">Varför behövs detta?</p>
-                  <ul className="list-disc list-inside space-y-1 text-left">
-                    <li>Kameran eller galleriet används för att välja en profilbild</li>
-                    <li>Bilden laddas upp och visas som din avatar i appen</li>
-                    <li>Inga bilder sparas eller delas utan ditt godkännande</li>
-                  </ul>
-                </div>
+                <p className="text-xs text-muted-foreground">
+                  När du väljer profilbild kan du också använda kameran eller ditt fotobibliotek.
+                </p>
               </div>
             </PermDesc>
           </PermHeader>
