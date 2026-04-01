@@ -1,18 +1,28 @@
 
 
-## Plan: Uppgradera CI till macOS 26 + Xcode 26
+## Plan: Fixa kamera-permission för App Store-godkännande
 
-### Bakgrund
-GitHub Actions har `macos-26` runners med Xcode 26.2 som default. Detta säkerställer att appen byggs med iOS 26 SDK, vilket App Store kräver.
+### Problem
+`NSCameraUsageDescription` i Info.plist säger "Appen använder kameran..." medan mikrofon och fotobibliotek konsekvent använder "Kampen". Apple kan neka om beskrivningen inte är tillräckligt tydlig eller inkonsekvent.
 
 ### Ändringar
 
-**1. `.github/workflows/ios-testflight.yml`**
-- `runs-on: macos-14` → `runs-on: macos-26`
-- Ta bort steget "Select Xcode" helt (Xcode 26.2 är default på macos-26)
+**Fil: `ios/App/App/Info.plist`**
 
-**2. `ios/App/App.xcodeproj/project.pbxproj`**
-- Uppdatera `IPHONEOS_DEPLOYMENT_TARGET` från `15.0` till `16.0` i alla build configurations (4 ställen: Debug/Release för projekt + target). iOS 16 är minimikravet för Xcode 26.
+Uppdatera `NSCameraUsageDescription` så att den:
+1. Använder appnamnet "Kampen" (som de andra behörighetstexterna)
+2. Förklarar tydligare varför kameran behövs och vad som händer med bilden
 
-Det är allt som behövs. Fastfile, entitlements och resten förblir oförändrade.
+Ny text:
+```
+NSCameraUsageDescription:
+"Kampen behöver åtkomst till kameran så att du kan ta ett foto eller spela in en video som bevis på att du har slutfört en utmaning. Materialet laddas upp till våra servrar och granskas av administratörer för att verifiera ditt resultat."
+```
+
+De övriga texterna (mikrofon, fotobibliotek, hälsa) är redan korrekta och behöver inte ändras.
+
+### Viktigt
+- Info.plist används i **både Debug och Release** (bekräftat i project.pbxproj rad 301 och 324)
+- Inga andra Info.plist-filer skriver över denna
+- Efter ändringen måste du köra `npx cap sync ios` och göra en clean build i Xcode innan ny submission
 
